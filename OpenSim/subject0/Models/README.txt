@@ -1,0 +1,1 @@
+ground_thorax translations set to 0. 
