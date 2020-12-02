@@ -332,10 +332,11 @@ class dataDrivenGuess:
             
         return self.guessForceDerivative
     
-    def getGuessTMActivation(self, joints):
+    def getGuessTMActivation(self, actJoints):
         g = [0.1] * (self.N + 1)
+        self.actJoints = actJoints
         self.guessTMActivation = pd.DataFrame()  
-        for count, TMJoint in enumerate(joints):
+        for count, TMJoint in enumerate(self.actJoints):
             self.guessTMActivation.insert(
                     count, TMJoint, g)
             
@@ -397,9 +398,9 @@ class dataDrivenGuess:
             
         return guessForceDerivativeCol
     
-    def getGuessTMActivationCol(self, joints):
+    def getGuessTMActivationCol(self):
         guessTMActivationCol = (
-                pd.DataFrame(columns=joints))         
+                pd.DataFrame(columns=self.actJoints))         
         for k in range(self.N):
             for c in range(self.d):          
                 guessTMActivationCol = (
