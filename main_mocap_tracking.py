@@ -21,7 +21,7 @@ solveProblem = run_options[0]
 saveResults = run_options[1]
 analyzeResults = run_options[2]
 loadResults = run_options[3]
-writeMotion = run_options[4]
+writeMotionFile = run_options[4]
 writeGRF = run_options[5]
 visualizeTracking = run_options[6]
 decomposeCost = run_options[7]
@@ -34,8 +34,9 @@ cases = ["6"]
 # loadPolynomialData = True
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = False
+visualizeResultsAgainstBounds = True
 plotMarkerTrackingAtInitialGuess = False
+writeIMUFile = True
 
 # Numerical Settings
 tol = 4
@@ -418,7 +419,7 @@ for case in cases:
         if analyzeResults:
             if velocity_correction:
                 F1 = ca.external('F','Shoulder_' + subject + '_pp.dll')  
-                NOutput_F1 = NJoints + 3*NHolConstraints + NVelCorrs + 2*3 
+                NOutput_F1 = NJoints + 3*NHolConstraints + NVelCorrs + 4*3 
                 
     os.chdir(pathMain)
     '''
@@ -480,6 +481,16 @@ for case in cases:
                   1 + idxStations["clavicle"][-1] + 3))
     idxStations["all"] = idxStations["clavicle"] + idxStations["scapula"]
     
+    idxIMUs = {}
+    idxIMUs["radius"] = {}
+    idxIMUs["radius"]["angVel"] = list(
+            range(1 + idxStations["all"][-1], 
+                  1 + idxStations["all"][-1] + 3))
+    idxIMUs["radius"]["linAcc"] = list(
+            range(1 + idxIMUs["radius"]["angVel"][-1], 
+                  1 + idxIMUs["radius"]["angVel"][-1] + 3))
+    idxIMUs["radius"]["all"] = (idxIMUs["radius"]["angVel"] + 
+                                idxIMUs["radius"]["linAcc"])    
    
     # %% CasADi helper functions
     from functionCasADi import normSumPow
@@ -2006,15 +2017,9 @@ for case in cases:
             qdotCorr_opt = F1_out[idxVelCorrs["all"], :] 
         stations_opt = F1_out[idxStations["all"], :]
         assert np.alltrue(stations_opt[:3,:] - 
-                          stations_opt[3:,:] < 10**(-5)), "error stations"    
-        
-        
-        
-        
-        
-#         # Assess mtp torques
-#         if stats['success']:
-#             assert np.alltrue(np.abs(mtpT) < 10**(-5)), "error in mtp torques"           
+                          stations_opt[3:,:] < 10**(-5)), "error stations"   
+        angVel_opt = F1_out[idxIMUs["radius"]["angVel"], :]
+        linAcc_opt = F1_out[idxIMUs["radius"]["linAcc"], :]         
         
 #         # %% Data to track - Adjust for offset  
 #         if tracking_data == "markers": 
@@ -2047,8 +2052,8 @@ for case in cases:
         Qs_opt_nsc_deg[idxRotationalJoints, :] = (
             Qs_opt_nsc_deg[idxRotationalJoints, :] * 180 / np.pi)             
         
-        # %% Write motion files for visualization in OpenSim GUI
-        if writeMotion:    
+        # %% Write motion file for visualization in OpenSim GUI
+        if writeMotionFile:    
             # muscleLabels = ([bothSidesMuscle + '/activation' 
             #                   for bothSidesMuscle in bothSidesMuscles])        
             labels = ['time'] + joints   
@@ -2058,7 +2063,23 @@ for case in cases:
             data = np.concatenate((tgridf.T, Qs_opt_nsc_deg.T),axis=1)
             from variousFunctions import numpy2storage
             numpy2storage(labels_w_muscles, data, os.path.join(
-                pathResults, 'kinematics.mot')) 
+                pathResults, 'kinematics.mot'))
+            
+        # %% Write IMU files with synthetic data
+        imu_labels = []
+        linAcc_labels = []
+        for dimension in dimensions:
+            imu_labels = imu_labels + ["radius_imu_" + dimension]
+        if writeIMUFile:
+            imu_labels_all = ['time'] + imu_labels  
+            angVel_data = np.concatenate((tgridf.T[1::], angVel_opt.T),axis=1)
+            linAcc_data = np.concatenate((tgridf.T[1::], linAcc_opt.T),axis=1)            
+            from variousFunctions import numpy2storage
+            numpy2storage(imu_labels_all, angVel_data, os.path.join(
+                pathResults, 'angularVelocities.mot'))
+            numpy2storage(imu_labels_all, linAcc_data, os.path.join(
+                pathResults, 'linearAccelerations.mot'))
+            
 
         # %% Visualize tracking results
         if visualizeTracking:
