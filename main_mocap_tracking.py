@@ -14,8 +14,8 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, True, True, True, True, True, True, False, False]
-# run_options = [False, False, True, True, True, True, True, True, True, False]
+# run_options = [True, True, True, True, True, True, True, True, False, False]
+run_options = [False, False, True, True, True, True, True, True, True, False]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
