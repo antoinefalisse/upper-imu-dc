@@ -261,7 +261,7 @@ def getSettings():
                     ['ij', 'ai', 'ts', 'aa', 'gu', 'EpL', 'centelbow',
                      'centijc7', 'centpxt8'],
                 'timeInterval': [0.5, 6.5],                
-                'N': 650,
+                'N': 600,
                 'filter_coordinates_toTrack': True,
                 'coordinates_toTrack': {
                     'rotational': [
