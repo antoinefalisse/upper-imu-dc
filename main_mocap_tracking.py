@@ -14,8 +14,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, True, True, True, True, True, True, False]
-run_options = [False, False, True, True, True, True, True, True, True]
+run_options = [True, True, True, True, True, True, True, True, False, False]
+# run_options = [False, False, True, True, True, True, True, True, True, False]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -26,20 +26,21 @@ writeGRF = run_options[5]
 visualizeTracking = run_options[6]
 decomposeCost = run_options[7]
 visualizeSimulationResults = run_options[8]
+visualizeConstraintErrors = run_options[9]
 
-cases = ["1"]
+cases = ["6"]
 
-loadMTParameters = True 
-loadPolynomialData = True
+# loadMTParameters = True 
+# loadPolynomialData = True
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = True
+visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
 
 # Numerical Settings
 tol = 4
 d = 3
-NThreads = 8
+NThreads = 20
 parallelMode = "thread"
 
 from settings import getSettings     
@@ -414,6 +415,11 @@ for case in cases:
                 F = ca.external('F','Shoulder_' + subject + '_test5.dll')  
                 NKinConstraints = 1*NHolConstraints
                 NOutput_F = NJoints + NKinConstraints   
+        if analyzeResults:
+            if velocity_correction:
+                F1 = ca.external('F','Shoulder_' + subject + '_pp.dll')  
+                NOutput_F1 = NJoints + 3*NHolConstraints + NVelCorrs + 2*3 
+                
     os.chdir(pathMain)
     '''
     vec_in_1 = -np.ones((14*2, 1))
@@ -425,29 +431,33 @@ for case in cases:
     '''    
     # Helper indices.    
     idxKinConstraints = {}
-    if constraint_pos:
-        idxKinConstraints["Position"] = list(
+    idxKinConstraints["Position"] = list(
             range(NJoints, NJoints + NHolConstraints))
-        idxKinConstraints["all"] = idxKinConstraints["Position"] 
-    if constraint_vel:
-        idxKinConstraints["Velocity"] = list(
+    idxKinConstraints["Velocity"] = list(
             range(1 + idxKinConstraints["Position"][-1], 
                   1 + idxKinConstraints["Position"][-1] + NHolConstraints))
-        idxKinConstraints["all"] = (idxKinConstraints["Position"]  + 
-                                    idxKinConstraints["Velocity"]) 
-    if constraint_acc:
-        idxKinConstraints["Acceleration"] = list(
+    idxKinConstraints["Acceleration"] = list(
             range(1 + idxKinConstraints["Velocity"][-1], 
                   1 + idxKinConstraints["Velocity"][-1] + NHolConstraints)) 
-        idxKinConstraints["all"] = (idxKinConstraints["Position"] + 
-                                    idxKinConstraints["Velocity"] + 
-                                    idxKinConstraints["Acceleration"])  
-        
+    
+    if constraint_pos:        
+        idxKinConstraints["applied"] = idxKinConstraints["Position"] 
+    if constraint_vel:        
+        idxKinConstraints["applied"] = (idxKinConstraints["Position"]  + 
+                                        idxKinConstraints["Velocity"]) 
+    if constraint_acc:        
+        idxKinConstraints["applied"] = (idxKinConstraints["Position"] + 
+                                        idxKinConstraints["Velocity"] + 
+                                        idxKinConstraints["Acceleration"])  
+    idxKinConstraints["all"] = (idxKinConstraints["Position"] + 
+                                idxKinConstraints["Velocity"] + 
+                                idxKinConstraints["Acceleration"])         
+    
+    idxVelCorrs = {}
     if velocity_correction:
-        idxVelCorrs = {}
-        idxVelCorrs["all"] = list(
-            range(1 + idxKinConstraints["all"][-1], 
-                  1 + idxKinConstraints["all"][-1] + NVelCorrs)) 
+        idxVelCorrs["applied"] = list(
+            range(1 + idxKinConstraints["applied"][-1], 
+                  1 + idxKinConstraints["applied"][-1] + NVelCorrs)) 
         # Joints for which the velocity correction should be applied.    
         jointVelCorrs = ['clav_prot', 'clav_elev', 'scapula_abduction',
                          'scapula_elevation', 'scapula_upward_rot', 
@@ -457,6 +467,19 @@ for case in cases:
             jointNoVelCorrs.remove(jointVelCorr)    
         idxJointVelCorr = getJointIndices(joints, jointVelCorrs)
         idxNoJointVelCorr = getJointIndices(joints, jointNoVelCorrs)
+    idxVelCorrs["all"] = list(
+            range(1 + idxKinConstraints["all"][-1], 
+                  1 + idxKinConstraints["all"][-1] + NVelCorrs)) 
+    
+    idxStations = {}
+    idxStations["clavicle"] = list(
+            range(1 + idxVelCorrs["all"][-1], 
+                  1 + idxVelCorrs["all"][-1] + 3))
+    idxStations["scapula"] = list(
+            range(1 + idxStations["clavicle"][-1], 
+                  1 + idxStations["clavicle"][-1] + 3))
+    idxStations["all"] = idxStations["clavicle"] + idxStations["scapula"]
+    
    
     # %% CasADi helper functions
     from functionCasADi import normSumPow
@@ -1344,7 +1367,7 @@ for case in cases:
                 Tj = F(ca.vertcat(QsQdotskj_nsc[:, j+1], Qdotdotsj_nsc[:, j], 
                                   lambdaj_nsc[:, j], gammaj_nsc[:, j]))
                 # Extract the velocity coorectors and reconstruct vector.
-                qdotCorrj = Tj[idxVelCorrs["all"]]
+                qdotCorrj = Tj[idxVelCorrs["applied"]]
                 qdotCorr_allj = ca.MX(NJoints, 1)
                 qdotCorr_allj[idxNoJointVelCorr,:] = 0
                 qdotCorr_allj[idxJointVelCorr,:] = qdotCorrj   
@@ -1411,7 +1434,7 @@ for case in cases:
                 eq_constr.append(diffTj)
                 
             # Enforce kinematics constraints 
-            eq_constr.append(Tj[idxKinConstraints["all"]])           
+            eq_constr.append(Tj[idxKinConstraints["applied"]])           
             
 #             ###################################################################
 #             # Muscle-driven joint torques
@@ -1959,15 +1982,15 @@ for case in cases:
         lambda_opt = lambda_col_opt_nsc[:,d-1::d] 
         if velocity_correction:
             gamma_opt = gamma_col_opt_nsc[:,d-1::d] 
-        F_out = np.zeros((NOutput_F , N))
+        F1_out = np.zeros((NOutput_F1 , N))
         for k in range(N):    
             if velocity_correction:
-                Tj = F(ca.vertcat(QsQdots_opt_nsc[:, k+1], Qdotdots_opt[:, k],
-                                  lambda_opt[:, k], gamma_opt[:, k]))
+                Tj = F1(ca.vertcat(QsQdots_opt_nsc[:, k+1], Qdotdots_opt[:, k],
+                                   lambda_opt[:, k], gamma_opt[:, k]))
             else:
                 Tj = F(ca.vertcat(QsQdots_opt_nsc[:, k+1], Qdotdots_opt[:, k],
                                   lambda_opt[:, k]))
-            F_out[:, k] = Tj.full().T                    
+            F1_out[:, k] = Tj.full().T                    
 #         if tracking_data == "markers":
 #             marker_sim_opt = F1_out[idxMarker["toTrack"], :] 
 #             if stats['success'] and markers_as_controls:
@@ -1977,10 +2000,17 @@ for case in cases:
 #             marker_sim_opt_sc = marker_sim_opt / (
 #                     scalingMarker.to_numpy().T *np.ones((1, N)))
         
-        torques_opt = F_out[getJointIndices(joints, joints), :] 
-        kinCon_opt = F_out[idxKinConstraints["all"], :] 
+        torques_opt = F1_out[getJointIndices(joints, joints), :] 
+        kinCon_opt = F1_out[idxKinConstraints["all"], :] 
         if velocity_correction:
-            qdotCorr_opt = F_out[idxVelCorrs["all"], :] 
+            qdotCorr_opt = F1_out[idxVelCorrs["all"], :] 
+        stations_opt = F1_out[idxStations["all"], :]
+        assert np.alltrue(stations_opt[:3,:] - 
+                          stations_opt[3:,:] < 10**(-5)), "error stations"    
+        
+        
+        
+        
         
 #         # Assess mtp torques
 #         if stats['success']:
@@ -2385,6 +2415,7 @@ for case in cases:
             #     title='Marker trajectories at mesh points' 
             #     plotVSBounds(y,lb,ub,title)    
             
+        if visualizeSimulationResults:
             ncol = 6 
             nrow = np.ceil(NJoints/ncol)           
             fig, axs = plt.subplots(int(nrow), ncol, sharex=True)  
@@ -2408,6 +2439,26 @@ for case in cases:
             plt.setp(axs[:, 0], ylabel='(Nm or N)')
             fig.align_ylabels()            
             plt.legend(handles, labels, loc='upper right')
+            
+        if visualizeConstraintErrors:
+            # Contraint errors       
+            constraint_levels = ["positions", "velocity", "acceleration"]
+            constraint_labels = []
+            for constraint_level in constraint_levels:
+                for count in range(NHolConstraints):
+                    constraint_labels.append(constraint_level + '_' + str(count))
+            
+            import matplotlib.pyplot as plt 
+            fig, axs = plt.subplots(3, 3, sharex=True) 
+            fig.suptitle('Constraint errors')     
+            for i, ax in enumerate(axs.flat):
+                    ax.plot(tgridf[0,1::].T, 
+                            kinCon_opt[i:i+1,:].T, 
+                            c='orange', label='simulated')                
+                    ax.set_title(constraint_labels[i])
+            plt.setp(axs[-1, :], xlabel='Time (s)')
+            plt.setp(axs[:, 0], ylabel='(todo)')
+            fig.align_ylabels()
             
 #         if visualizeSimulationResults:
 #             #TODO: path references
