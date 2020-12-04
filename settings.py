@@ -28,10 +28,10 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': True,
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
                 'w_trackingTerm': 1000,
@@ -47,9 +47,6 @@ def getSettings():
                 'model': 'scaled',
                 'trial': 'FLX01',
                 'tracking_data': 'coordinates',
-                'markers_toTrack':  
-                    ['ij', 'ai', 'ts', 'aa', 'gu', 'EpL', 'centelbow',
-                     'centijc7', 'centpxt8'],
                 'timeInterval': [0.5, 1.5],                
                 'N': 100,
                 'filter_coordinates_toTrack': True,
@@ -70,28 +67,19 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
                 },
             '2': {
                 'subjectID' : '0',
                 'model': 'scaled',
                 'trial': 'FLX01',
                 'tracking_data': 'coordinates',
-                'markers_toTrack':  
-                    ['ij', 'ai', 'ts', 'aa', 'gu', 'EpL', 'centelbow',
-                     'centijc7', 'centpxt8'],
                 'timeInterval': [0.5, 1.5],                
                 'N': 100,
                 'filter_coordinates_toTrack': True,
@@ -112,28 +100,19 @@ def getSettings():
                 'constraint_vel': False,
                 'constraint_acc': False,
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
                 },
             '3': {
                 'subjectID' : '0',
                 'model': 'scaled',
                 'trial': 'FLX01',
                 'tracking_data': 'coordinates',
-                'markers_toTrack':  
-                    ['ij', 'ai', 'ts', 'aa', 'gu', 'EpL', 'centelbow',
-                     'centijc7', 'centpxt8'],
                 'timeInterval': [0.5, 1.5],                
                 'N': 100,
                 'filter_coordinates_toTrack': True,
@@ -154,28 +133,19 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': True,
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
                 },
             '4': {
                 'subjectID' : '0',
                 'model': 'scaled',
                 'trial': 'FLX01',
                 'tracking_data': 'coordinates',
-                'markers_toTrack':  
-                    ['ij', 'ai', 'ts', 'aa', 'gu', 'EpL', 'centelbow',
-                     'centijc7', 'centpxt8'],
                 'timeInterval': [0.5, 1.5],                
                 'N': 100,
                 'filter_coordinates_toTrack': True,
@@ -196,28 +166,19 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
                 },
             '5': {
                 'subjectID' : '0',
                 'model': 'scaled',
                 'trial': 'FLX01',
                 'tracking_data': 'coordinates',
-                'markers_toTrack':  
-                    ['ij', 'ai', 'ts', 'aa', 'gu', 'EpL', 'centelbow',
-                     'centijc7', 'centpxt8'],
                 'timeInterval': [0.5, 1.5],                
                 'N': 100,
                 'filter_coordinates_toTrack': True,
@@ -238,28 +199,19 @@ def getSettings():
                 'constraint_vel': False,
                 'constraint_acc': False,
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
                 },
             '6': {
                 'subjectID' : '0',
                 'model': 'scaled',
                 'trial': 'FLX01',
                 'tracking_data': 'coordinates',
-                'markers_toTrack':  
-                    ['ij', 'ai', 'ts', 'aa', 'gu', 'EpL', 'centelbow',
-                     'centijc7', 'centpxt8'],
                 'timeInterval': [0.5, 6.5],                
                 'N': 600,
                 'filter_coordinates_toTrack': True,
@@ -280,19 +232,13 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
                 },
             '7': {
                 'subjectID' : '0',
@@ -301,6 +247,7 @@ def getSettings():
                 'tracking_data': 'imus',
                 'imus_toTrack':  
                     ['radius_imu_x', 'radius_imu_y', 'radius_imu_z'],
+                'track_imus_frame': 'bodyFrame',
                 'timeInterval': [1, 2],                
                 'N': 100,
                 'filter_coordinates_toTrack': True,
@@ -313,19 +260,13 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_6',
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
                 },
             '8': {
                 'subjectID' : '0',
@@ -353,19 +294,13 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
                 },
             '9': {
                 'subjectID' : '0',
@@ -374,6 +309,7 @@ def getSettings():
                 'tracking_data': 'imus',
                 'imus_toTrack':  
                     ['radius_imu_x', 'radius_imu_y', 'radius_imu_z'],
+                'track_imus_frame': 'bodyFrame',
                 'timeInterval': [1, 2],                
                 'N': 100,
                 'filter_coordinates_toTrack': True,
@@ -386,28 +322,19 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_8',
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
                 },
             '10': {
                 'subjectID' : '0',
                 'model': 'weldGT_lockedEP_scaled',
                 'trial': 'FLX01',
                 'tracking_data': 'coordinates',
-                'markers_toTrack':  
-                    ['ij', 'ai', 'ts', 'aa', 'gu', 'EpL', 'centelbow',
-                     'centijc7', 'centpxt8'],
                 'timeInterval': [0.5, 6.5],                
                 'N': 600,
                 'filter_coordinates_toTrack': True,
@@ -425,19 +352,69 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 
-                'w_activationTerm': 0,
-                'w_jointAccelerationTerm': 1,
-                'w_actJExcitationTerm': 1,
-                'w_gtJExcitationTerm': 1,
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
-                'w_trackingTerm': 1000,
-                              
-                # 'norm_std': False,
-                # 'boundsMarker': 'uniformBoundsMarker',
-                # 'markers_as_controls': True,
-                # 'markers_scaling': 3,
-                # 'conservative_bounds': False
+                'w_trackingTerm': 1000
+                },
+            '11': {
+                'subjectID' : '0',
+                'model': 'weldGT_lockedEP_scaled',
+                'trial': 'FLX01',
+                'tracking_data': 'imus',
+                'imus_toTrack':  
+                    ['radius_imu_x', 'radius_imu_y', 'radius_imu_z'],
+                'track_imus_frame': 'bodyFrame',
+                'timeInterval': [1.5, 2.5],                
+                'N': 100,
+                'filter_coordinates_toTrack': True,
+                'guess_zeroVelocity': True,
+                'guess_zeroAcceleration': True,
+                'guessType': "dataDriven",
+                'velocity_correction': True,
+                'constraint_pos': True,
+                'constraint_vel': True,
+                'constraint_acc': False,
+                'referenceIMUResultsCase': 'Case_10',
+                
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
+                'w_lambdaTerm': 1,
+                'w_gammaTerm': 1,   
+                'w_trackingTerm': 1000
+                },
+            '12': {
+                'subjectID' : '0',
+                'model': 'weldGT_lockedEP_scaled',
+                'trial': 'FLX01',
+                'tracking_data': 'imus',
+                'imus_toTrack':  
+                    ['radius_imu_x', 'radius_imu_y', 'radius_imu_z'],
+                'track_imus_frame': 'groundFrame',
+                'timeInterval': [1.5, 2.5],                
+                'N': 100,
+                'filter_coordinates_toTrack': True,
+                'guess_zeroVelocity': True,
+                'guess_zeroAcceleration': True,
+                'guessType': "dataDriven",
+                'velocity_correction': True,
+                'constraint_pos': True,
+                'constraint_vel': True,
+                'constraint_acc': False,
+                'referenceIMUResultsCase': 'Case_10',
+                
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
+                'w_lambdaTerm': 1,
+                'w_gammaTerm': 1,   
+                'w_trackingTerm': 1000
                 }
                 }
     return settings
