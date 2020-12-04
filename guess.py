@@ -272,7 +272,7 @@ class dataDrivenGuess:
     def getGuessVelocity(self, scaling, zeroVelocity=False):
         self.splineQs()
         self.guessVelocity = pd.DataFrame()  
-        g = [0] * (self.N + 1)
+        g = [0.] * (self.N + 1)
         for count, joint in enumerate(self.joints): 
             if zeroVelocity:
                 self.guessVelocity.insert(count, joint, g)             
@@ -285,11 +285,11 @@ class dataDrivenGuess:
     def getGuessAcceleration(self, scaling, zeroAcceleration=False):
         self.splineQs()
         self.guessAcceleration = pd.DataFrame()  
-        g = [0] * self.N
+        g = [0.] * self.N
         for count, joint in enumerate(self.joints):   
             if zeroAcceleration:
                 self.guessAcceleration.insert(
-                    count, joint, g / scaling.iloc[0][joint]) 
+                    count, joint, g ) 
             else:               
                 self.guessAcceleration.insert(
                     count, joint, self.Qdotdots_spline_interp[joint] /
