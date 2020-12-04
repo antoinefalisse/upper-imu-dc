@@ -311,6 +311,47 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'referenceIMUResultsCase': 'Case_6',
+                
+                'w_activationTerm': 0,
+                'w_jointAccelerationTerm': 1,
+                'w_actJExcitationTerm': 1,
+                'w_gtJExcitationTerm': 1,
+                'w_lambdaTerm': 1,
+                'w_gammaTerm': 1,   
+                'w_trackingTerm': 1000,
+                              
+                # 'norm_std': False,
+                # 'boundsMarker': 'uniformBoundsMarker',
+                # 'markers_as_controls': True,
+                # 'markers_scaling': 3,
+                # 'conservative_bounds': False
+                },
+            '8': {
+                'subjectID' : '0',
+                'model': 'weldGT_scaled',
+                'trial': 'FLX01',
+                'tracking_data': 'coordinates',
+                'markers_toTrack':  
+                    ['ij', 'ai', 'ts', 'aa', 'gu', 'EpL', 'centelbow',
+                     'centijc7', 'centpxt8'],
+                'timeInterval': [0.5, 6.5],                
+                'N': 1000,
+                'filter_coordinates_toTrack': True,
+                'coordinates_toTrack': {
+                    'rotational': ['clav_prot', 'clav_elev',
+                        'scapula_abduction', 'scapula_elevation',
+                        'scapula_upward_rot', 'scapula_winging',
+                        'plane_elv', 'shoulder_elv', 'axial_rot',
+                        'elbow_flexion', 'pro_sup'],
+                    'translational': []},
+                'guess_zeroVelocity': False,
+                'guess_zeroAcceleration': False,
+                'guessType': "dataDriven",
+                'velocity_correction': True,
+                'constraint_pos': True,
+                'constraint_vel': True,
+                'constraint_acc': False,
                 
                 'w_activationTerm': 0,
                 'w_jointAccelerationTerm': 1,
@@ -328,5 +369,3 @@ def getSettings():
                 }
                 }
     return settings
-
-

@@ -14,8 +14,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, True, True, True, True, True, True, False, False]
-run_options = [False, False, True, True, True, True, True, True, True, False]
+run_options = [True, True, True, True, True, True, True, True, False, False]
+# run_options = [False, False, True, True, True, True, True, True, True, False]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -28,7 +28,7 @@ decomposeCost = run_options[7]
 visualizeSimulationResults = run_options[8]
 visualizeConstraintErrors = run_options[9]
 
-cases = ["7"]
+cases = ["8"]
 
 # loadMTParameters = True 
 # loadPolynomialData = True
@@ -63,7 +63,11 @@ for case in cases:
     # Other settings
     subjectID = settings[case]['subjectID']
     subject = "subject" + subjectID
-    model = subject + "_" + settings[case]['model']
+    model_type = settings[case]['model']
+    enableGroundThorax = True
+    if model_type == "weldGT_scaled":
+        enableGroundThorax = False        
+    model = subject + "_" + model_type
     trial = settings[case]['trial']
     timeInterval = settings[case]['timeInterval']
     filter_coordinates_toTrack = settings[case]['filter_coordinates_toTrack']    
@@ -119,11 +123,11 @@ for case in cases:
     pathCase = 'Case_' + case
     pathResults = os.path.join(pathMain, 'Results', filename[:-3], pathCase)  
     if not os.path.exists(pathResults):
-        os.makedirs(pathResults)     
-    # TODO: that's where the synthetic IMU data files are saved for now.    
-    referenceIMUResultsCase = 'Case_6'        
-    pathIMUFolder = os.path.join(pathMain, 'Results', filename[:-3],
-                                 referenceIMUResultsCase)
+        os.makedirs(pathResults)       
+    if tracking_data == "imus":
+        referenceIMUResultsCase = settings[case]['referenceIMUResultsCase'] 
+        pathIMUFolder = os.path.join(pathMain, 'Results', filename[:-3],
+                                     referenceIMUResultsCase)
     
     # %% Muscle part
     '''
@@ -183,6 +187,10 @@ for case in cases:
               'scapula_abduction', 'scapula_elevation', 'scapula_upward_rot', 
               'scapula_winging', 'plane_elv', 'shoulder_elv', 'axial_rot',
               'elbow_flexion', 'pro_sup']
+    if not enableGroundThorax:
+        joints.remove('ground_thorax_rot_x')
+        joints.remove('ground_thorax_rot_y')
+        joints.remove('ground_thorax_rot_z')
     NJoints = len(joints)
     # Rotational degrees of freedom
     rotationalJoints = ['ground_thorax_rot_x', 'ground_thorax_rot_y',
@@ -191,6 +199,10 @@ for case in cases:
                         'scapula_upward_rot', 'scapula_winging', 'plane_elv',
                         'shoulder_elv', 'axial_rot', 'elbow_flexion',
                         'pro_sup']      
+    if not enableGroundThorax:
+        rotationalJoints.remove('ground_thorax_rot_x')
+        rotationalJoints.remove('ground_thorax_rot_y')
+        rotationalJoints.remove('ground_thorax_rot_z')
     idxRotationalJoints = getJointIndices(joints, rotationalJoints)
     # # Translational degrees of freedom
     # translationalJoints = ['ground_thorax_rot_tx', 'ground_thorax_rot_ty',
@@ -198,6 +210,10 @@ for case in cases:
     # Ground thorax joints
     groundThoraxJoints = ['ground_thorax_rot_x', 'ground_thorax_rot_y',
                           'ground_thorax_rot_z']
+    if not enableGroundThorax:
+        groundThoraxJoints.remove('ground_thorax_rot_x')
+        groundThoraxJoints.remove('ground_thorax_rot_y')
+        groundThoraxJoints.remove('ground_thorax_rot_z')
     idxGroundThoraxJoints = getJointIndices(joints, groundThoraxJoints)
     NGroundThoraxJoints = len(groundThoraxJoints)
     # Actuated joints (ideal torque motors or muscles)
@@ -409,39 +425,43 @@ for case in cases:
     for count in range(NHolConstraints):
         holConstraints_titles.append('hol_constraint_' + str(count))     
     NVelCorrs = 6 # clavicle and scapula mobilities
+    if enableGroundThorax:
+        prefixF = "Shoulder_"
+    else:
+        prefixF = "Shoulder_GT_"    
     os.chdir(pathExternalFunctions)
     if tracking_data == "markers":
         print("Not supported") 
     elif tracking_data == "coordinates":
         if velocity_correction:
             if constraint_pos and constraint_vel and constraint_acc:
-                F = ca.external('F','Shoulder_' + subject + '_test0.dll')  
+                F = ca.external('F',prefixF + subject[0] + subject[-1] + '_test0.dll')  
                 NKinConstraints = 3*NHolConstraints
                 NOutput_F = NJoints + NKinConstraints + NVelCorrs                
             elif constraint_pos and constraint_vel and not constraint_acc:
-                F = ca.external('F','Shoulder_' + subject + '_test1.dll')  
+                F = ca.external('F',prefixF + subject[0] + subject[-1] + '_test1.dll')  
                 NKinConstraints = 2*NHolConstraints
                 NOutput_F = NJoints + NKinConstraints + NVelCorrs                 
             elif constraint_pos and not constraint_vel and not constraint_acc:
-                F = ca.external('F','Shoulder_' + subject + '_test2.dll')  
+                F = ca.external('F',prefixF + subject[0] + subject[-1] + '_test2.dll')  
                 NKinConstraints = 1*NHolConstraints
                 NOutput_F = NJoints + NKinConstraints + NVelCorrs              
         else:
             if constraint_pos and constraint_vel and constraint_acc:
-                F = ca.external('F','Shoulder_' + subject + '_test3.dll')  
+                F = ca.external('F',prefixF + subject[0] + subject[-1] + '_test3.dll')  
                 NKinConstraints = 3*NHolConstraints
                 NOutput_F = NJoints + NKinConstraints                
             elif constraint_pos and constraint_vel and not constraint_acc:
-                F = ca.external('F','Shoulder_' + subject + '_test4.dll')  
+                F = ca.external('F',prefixF + subject[0] + subject[-1] + '_test4.dll')  
                 NKinConstraints = 2*NHolConstraints
                 NOutput_F = NJoints + NKinConstraints                 
             elif constraint_pos and not constraint_vel and not constraint_acc:
-                F = ca.external('F','Shoulder_' + subject + '_test5.dll')  
+                F = ca.external('F',prefixF + subject[0] + subject[-1] + '_test5.dll')  
                 NKinConstraints = 1*NHolConstraints
                 NOutput_F = NJoints + NKinConstraints   
         if analyzeResults:
             if velocity_correction:
-                F1 = ca.external('F','Shoulder_' + subject + '_pp.dll')  
+                F1 = ca.external('F',prefixF + subject[0] + subject[-1] + '_pp.dll')  
                 NOutput_F1 = NJoints + 3*NHolConstraints + NVelCorrs + 4*3 
                 
     elif tracking_data == "imus":
@@ -449,14 +469,14 @@ for case in cases:
             if constraint_pos and constraint_vel and constraint_acc:
                 print("Not supported")       
             elif constraint_pos and constraint_vel and not constraint_acc:
-                F = ca.external('F','Shoulder_' + subject[0] + subject[-1] +
+                F = ca.external('F',prefixF + subject[0] + subject[-1] +
                                 '_test1_IMU.dll')  
                 NKinConstraints = 2*NHolConstraints
                 NOutput_F = (NJoints + NKinConstraints + NVelCorrs + 
                              NEl_toTrack)                
         if analyzeResults:
             if velocity_correction:
-                F1 = ca.external('F','Shoulder_' + subject + '_pp.dll')  
+                F1 = ca.external('F',prefixF + subject[0] + subject[-1] + '_pp.dll')  
                 NOutput_F1 = NJoints + 3*NHolConstraints + NVelCorrs + 4*3
     os.chdir(pathMain)
     '''
@@ -561,7 +581,8 @@ for case in cases:
     from functionCasADi import mySum
     from functionCasADi import normSqrtDiff
     # f_NMusclesSum2 = normSumPow(NMuscles, 2)
-    f_NGroundThoraxJointsSum2 = normSumPow(NGroundThoraxJoints, 2)
+    if enableGroundThorax:
+        f_NGroundThoraxJointsSum2 = normSumPow(NGroundThoraxJoints, 2)
     f_NActJointsSum2 = normSumPow(NActJoints, 2)
     f_NJointsSum2 = normSumPow(NJoints, 2)
     f_NHolConstraintsSum2 = normSumPow(NHolConstraints, 2)
@@ -649,11 +670,12 @@ for case in cases:
     uBoundsActJAj = ca.vec(uBoundsActJA.to_numpy().T * np.ones((1, d*N))).full()
     lBoundsActJAj = ca.vec(lBoundsActJA.to_numpy().T * np.ones((1, d*N))).full()
     
-    uBoundsGTJA, lBoundsGTJA, scalingGTJA = bounds.getBoundsTMActivation(groundThoraxJoints)
-    uBoundsGTJAk = ca.vec(uBoundsGTJA.to_numpy().T * np.ones((1, N+1))).full()
-    lBoundsGTJAk = ca.vec(lBoundsGTJA.to_numpy().T * np.ones((1, N+1))).full()
-    uBoundsGTJAj = ca.vec(uBoundsGTJA.to_numpy().T * np.ones((1, d*N))).full()
-    lBoundsGTJAj = ca.vec(lBoundsGTJA.to_numpy().T * np.ones((1, d*N))).full()
+    if enableGroundThorax:
+        uBoundsGTJA, lBoundsGTJA, scalingGTJA = bounds.getBoundsTMActivation(groundThoraxJoints)
+        uBoundsGTJAk = ca.vec(uBoundsGTJA.to_numpy().T * np.ones((1, N+1))).full()
+        lBoundsGTJAk = ca.vec(lBoundsGTJA.to_numpy().T * np.ones((1, N+1))).full()
+        uBoundsGTJAj = ca.vec(uBoundsGTJA.to_numpy().T * np.ones((1, d*N))).full()
+        lBoundsGTJAj = ca.vec(lBoundsGTJA.to_numpy().T * np.ones((1, d*N))).full()
     
     # Controls
     # uBoundsADt, lBoundsADt, scalingADt = bounds.getBoundsActivationDerivative()
@@ -664,9 +686,10 @@ for case in cases:
     uBoundsActJEk = ca.vec(uBoundsActJE.to_numpy().T * np.ones((1, N))).full()
     lBoundsActJEk = ca.vec(lBoundsActJE.to_numpy().T * np.ones((1, N))).full()
     
-    uBoundsGTJE, lBoundsGTJE, scalingGTJE = bounds.getBoundsTMExcitation(groundThoraxJoints)
-    uBoundsGTJEk = ca.vec(uBoundsGTJE.to_numpy().T * np.ones((1, N))).full()
-    lBoundsGTJEk = ca.vec(lBoundsGTJE.to_numpy().T * np.ones((1, N))).full()
+    if enableGroundThorax:
+        uBoundsGTJE, lBoundsGTJE, scalingGTJE = bounds.getBoundsTMExcitation(groundThoraxJoints)
+        uBoundsGTJEk = ca.vec(uBoundsGTJE.to_numpy().T * np.ones((1, N))).full()
+        lBoundsGTJEk = ca.vec(lBoundsGTJE.to_numpy().T * np.ones((1, N))).full()
     
     # Slack controls
     uBoundsQdotdots, lBoundsQdotdots, scalingQdotdots = (
@@ -759,12 +782,14 @@ for case in cases:
     guessQdotsCol = guess.getGuessVelocityCol()    
     guessActJA = guess.getGuessTMActivation(actJoints)
     guessActJACol = guess.getGuessTMActivationCol()
-    guessGTJA = guess.getGuessTMActivation(groundThoraxJoints)
-    guessGTJACol = guess.getGuessTMActivationCol()
+    if enableGroundThorax:
+        guessGTJA = guess.getGuessTMActivation(groundThoraxJoints)
+        guessGTJACol = guess.getGuessTMActivationCol()
     # Controls
     # guessADt = guess.getGuessActivationDerivative(scalingADt)
     guessActJE = guess.getGuessTMExcitation(actJoints)
-    guessGTJE = guess.getGuessTMExcitation(groundThoraxJoints)
+    if enableGroundThorax:
+        guessGTJE = guess.getGuessTMExcitation(groundThoraxJoints)
     # Slack controls
     guessQdotdots = guess.getGuessAcceleration(scalingQdotdots, 
                                                guess_zeroAcceleration)
@@ -959,18 +984,19 @@ for case in cases:
         opti.set_initial(aActJ_col, guessActJACol.to_numpy().T)
         assert np.alltrue(lBoundsActJAj <= ca.vec(guessActJACol.to_numpy().T).full()), "lb ActJ activation col"
         assert np.alltrue(uBoundsActJAj >= ca.vec(guessActJACol.to_numpy().T).full()), "ub ActJ activation col"
-        # Ground thorax joints activation at mesh points
-        aGTJ = opti.variable(NGroundThoraxJoints, N+1)
-        opti.subject_to(opti.bounded(lBoundsGTJAk, ca.vec(aGTJ), uBoundsGTJAk))
-        opti.set_initial(aGTJ, guessGTJA.to_numpy().T)
-        assert np.alltrue(lBoundsGTJAk <= ca.vec(guessGTJA.to_numpy().T).full()), "lb GTJ activation"
-        assert np.alltrue(uBoundsGTJAk >= ca.vec(guessGTJA.to_numpy().T).full()), "ub GTJ activation"
-        # Ground thorax joints activation at collocation points
-        aGTJ_col = opti.variable(NGroundThoraxJoints, d*N)
-        opti.subject_to(opti.bounded(lBoundsGTJAj, ca.vec(aGTJ_col), uBoundsGTJAj))
-        opti.set_initial(aGTJ_col, guessGTJACol.to_numpy().T)
-        assert np.alltrue(lBoundsGTJAj <= ca.vec(guessGTJACol.to_numpy().T).full()), "lb GTJ activation col"
-        assert np.alltrue(uBoundsGTJAj >= ca.vec(guessGTJACol.to_numpy().T).full()), "ub GTJ activation col"
+        if enableGroundThorax:
+            # Ground thorax joints activation at mesh points
+            aGTJ = opti.variable(NGroundThoraxJoints, N+1)
+            opti.subject_to(opti.bounded(lBoundsGTJAk, ca.vec(aGTJ), uBoundsGTJAk))
+            opti.set_initial(aGTJ, guessGTJA.to_numpy().T)
+            assert np.alltrue(lBoundsGTJAk <= ca.vec(guessGTJA.to_numpy().T).full()), "lb GTJ activation"
+            assert np.alltrue(uBoundsGTJAk >= ca.vec(guessGTJA.to_numpy().T).full()), "ub GTJ activation"
+            # Ground thorax joints activation at collocation points
+            aGTJ_col = opti.variable(NGroundThoraxJoints, d*N)
+            opti.subject_to(opti.bounded(lBoundsGTJAj, ca.vec(aGTJ_col), uBoundsGTJAj))
+            opti.set_initial(aGTJ_col, guessGTJACol.to_numpy().T)
+            assert np.alltrue(lBoundsGTJAj <= ca.vec(guessGTJACol.to_numpy().T).full()), "lb GTJ activation col"
+            assert np.alltrue(uBoundsGTJAj >= ca.vec(guessGTJACol.to_numpy().T).full()), "ub GTJ activation col"
         
         #######################################################################
         # Controls
@@ -988,12 +1014,13 @@ for case in cases:
         opti.set_initial(eActJ, guessActJE.to_numpy().T)
         assert np.alltrue(lBoundsActJEk <= ca.vec(guessActJE.to_numpy().T).full()), "lb ActJ excitation"
         assert np.alltrue(uBoundsActJEk >= ca.vec(guessActJE.to_numpy().T).full()), "ub ActJ excitation"
-        # Ground thorax joints excitation at mesh points
-        eGTJ = opti.variable(NGroundThoraxJoints, N)
-        opti.subject_to(opti.bounded(lBoundsGTJEk, ca.vec(eGTJ), uBoundsGTJEk))
-        opti.set_initial(eGTJ, guessGTJE.to_numpy().T)
-        assert np.alltrue(lBoundsGTJEk <= ca.vec(guessGTJE.to_numpy().T).full()), "lb GTJ excitation"
-        assert np.alltrue(uBoundsGTJEk >= ca.vec(guessGTJE.to_numpy().T).full()), "ub GTJ excitation"
+        if enableGroundThorax:
+            # Ground thorax joints excitation at mesh points
+            eGTJ = opti.variable(NGroundThoraxJoints, N)
+            opti.subject_to(opti.bounded(lBoundsGTJEk, ca.vec(eGTJ), uBoundsGTJEk))
+            opti.set_initial(eGTJ, guessGTJE.to_numpy().T)
+            assert np.alltrue(lBoundsGTJEk <= ca.vec(guessGTJE.to_numpy().T).full()), "lb GTJ excitation"
+            assert np.alltrue(uBoundsGTJEk >= ca.vec(guessGTJE.to_numpy().T).full()), "ub GTJ excitation"
         
         #######################################################################
         # Slack controls
@@ -1129,18 +1156,19 @@ for case in cases:
             y = guessActJACol.to_numpy().T
             title='ActJ activation at collocation points' 
             plotVSBounds(y,lb,ub,title) 
-            # Ground thorax joints activation at mesh points
-            lb = lBoundsGTJA.to_numpy().T
-            ub = uBoundsGTJA.to_numpy().T
-            y = guessGTJA.to_numpy().T
-            title='GTJ activation at mesh points' 
-            plotVSBounds(y,lb,ub,title) 
-            # Ground thorax joints activation at collocation points
-            lb = lBoundsGTJA.to_numpy().T
-            ub = uBoundsGTJA.to_numpy().T
-            y = guessGTJACol.to_numpy().T
-            title='GTJ activation at collocation points' 
-            plotVSBounds(y,lb,ub,title) 
+            if enableGroundThorax:
+                # Ground thorax joints activation at mesh points
+                lb = lBoundsGTJA.to_numpy().T
+                ub = uBoundsGTJA.to_numpy().T
+                y = guessGTJA.to_numpy().T
+                title='GTJ activation at mesh points' 
+                plotVSBounds(y,lb,ub,title) 
+                # Ground thorax joints activation at collocation points
+                lb = lBoundsGTJA.to_numpy().T
+                ub = uBoundsGTJA.to_numpy().T
+                y = guessGTJACol.to_numpy().T
+                title='GTJ activation at collocation points' 
+                plotVSBounds(y,lb,ub,title) 
             ###################################################################
             # Controls
             '''
@@ -1157,12 +1185,13 @@ for case in cases:
             y = guessActJE.to_numpy().T
             title='ActJ excitation at mesh points' 
             plotVSBounds(y,lb,ub,title) 
-            # Ground thorax joints excitation at mesh points
-            lb = lBoundsGTJE.to_numpy().T
-            ub = uBoundsGTJE.to_numpy().T
-            y = guessGTJE.to_numpy().T
-            title='GTJ excitation at mesh points' 
-            plotVSBounds(y,lb,ub,title)               
+            if enableGroundThorax:
+                # Ground thorax joints excitation at mesh points
+                lb = lBoundsGTJE.to_numpy().T
+                ub = uBoundsGTJE.to_numpy().T
+                y = guessGTJE.to_numpy().T
+                title='GTJ excitation at mesh points' 
+                plotVSBounds(y,lb,ub,title)               
             ###################################################################
             # Slack controls
             '''
@@ -1235,15 +1264,17 @@ for case in cases:
         aActJk = ca.MX.sym('aActJk', NActJoints)
         aActJj = ca.MX.sym('aActJj', NActJoints, d)
         aActJkj = ca.horzcat(aActJk, aActJj)  
-        aGTJk = ca.MX.sym('aGTJk', NGroundThoraxJoints)
-        aGTJj = ca.MX.sym('aGTJj', NGroundThoraxJoints, d)
-        aGTJkj = ca.horzcat(aGTJk, aGTJj) 
+        if enableGroundThorax:
+            aGTJk = ca.MX.sym('aGTJk', NGroundThoraxJoints)
+            aGTJj = ca.MX.sym('aGTJj', NGroundThoraxJoints, d)
+            aGTJkj = ca.horzcat(aGTJk, aGTJj) 
         # Controls
         '''
         aDtk = ca.MX.sym('aDtk', NMuscles)    
         '''
         eActJk = ca.MX.sym('eActJk', NActJoints)
-        eGTJk = ca.MX.sym('eGTJk', NGroundThoraxJoints)
+        if enableGroundThorax:
+            eGTJk = ca.MX.sym('eGTJk', NGroundThoraxJoints)
         # Slack controls
         '''
         normFDtj = ca.MX.sym('normFDtj', NMuscles, d);
@@ -1473,7 +1504,8 @@ for case in cases:
             # Cost function
             # activationTerm = f_NMusclesSum2(akj[:, j+1])     
             actJExcitationTerm = f_NActJointsSum2(eActJk) 
-            gtJExcitationTerm = f_NGroundThoraxJointsSum2(eGTJk) 
+            if enableGroundThorax:
+                gtJExcitationTerm = f_NGroundThoraxJointsSum2(eGTJk) 
             jointAccelerationTerm = f_NJointsSum2(Qdotdotsj[:, j])   
             lambdaTerm = f_NHolConstraintsSum2(lambdaj[:, j])
             if velocity_correction:
@@ -1492,18 +1524,28 @@ for case in cases:
             #         weights['controls'] * (forceDtTerm + activationDtTerm)
             #         ) * h * B[j + 1])
             
-            if velocity_correction:
-                J += ((weights['actJExcitationTerm'] * actJExcitationTerm + 
-                       weights['gtJExcitationTerm'] * gtJExcitationTerm + 
-                       weights['jointAccelerationTerm'] * jointAccelerationTerm +                
-                       weights['lambdaTerm'] * lambdaTerm + 
-                       weights['gammaTerm'] * gammaTerm) * h * B[j + 1])
+            if enableGroundThorax:
+                if velocity_correction:
+                    J += ((weights['actJExcitationTerm'] * actJExcitationTerm + 
+                           weights['gtJExcitationTerm'] * gtJExcitationTerm + 
+                           weights['jointAccelerationTerm'] * jointAccelerationTerm +                
+                           weights['lambdaTerm'] * lambdaTerm + 
+                           weights['gammaTerm'] * gammaTerm) * h * B[j + 1])
+                else:
+                    J += ((weights['actJExcitationTerm'] * actJExcitationTerm + 
+                           weights['gtJExcitationTerm'] * gtJExcitationTerm +
+                           weights['jointAccelerationTerm'] * jointAccelerationTerm +                
+                           weights['lambdaTerm'] * lambdaTerm) * h * B[j + 1])
             else:
-                J += ((weights['actJExcitationTerm'] * actJExcitationTerm + 
-                       weights['gtJExcitationTerm'] * gtJExcitationTerm +
-                       weights['jointAccelerationTerm'] * jointAccelerationTerm +                
-                       weights['lambdaTerm'] * lambdaTerm) * h * B[j + 1])
-            
+                if velocity_correction:
+                    J += ((weights['actJExcitationTerm'] * actJExcitationTerm + 
+                           weights['jointAccelerationTerm'] * jointAccelerationTerm +                
+                           weights['lambdaTerm'] * lambdaTerm + 
+                           weights['gammaTerm'] * gammaTerm) * h * B[j + 1])
+                else:
+                    J += ((weights['actJExcitationTerm'] * actJExcitationTerm + 
+                           weights['jointAccelerationTerm'] * jointAccelerationTerm +                
+                           weights['lambdaTerm'] * lambdaTerm) * h * B[j + 1])            
             
             # Call external function (run inverse dynamics among other)
             if velocity_correction:
@@ -1532,7 +1574,8 @@ for case in cases:
             Qsp_nsc = ca.mtimes(Qskj_nsc, C[j+1])
             Qdotsp_nsc = ca.mtimes(Qdotskj_nsc, C[j+1])      
             aActJp = ca.mtimes(aActJkj, C[j+1])
-            aGTJp = ca.mtimes(aGTJkj, C[j+1])
+            if enableGroundThorax:
+                aGTJp = ca.mtimes(aGTJkj, C[j+1])
             # Append collocation equations
             # Muscle activation dynamics (implicit formulation)
             # eq_constr.append((h*aDtk_nsc - ap))
@@ -1553,9 +1596,10 @@ for case in cases:
             # Actuated joints activation dynamics (explicit formulation) 
             aActJDtj = f_actJointsDynamics(eActJk, aActJkj[:, j+1])
             eq_constr.append(h*aActJDtj - aActJp)
-            # ground thorax joints activation dynamics (explicit formulation) 
-            aGTJDtj = f_groundThoraxJointsDynamics(eGTJk, aGTJkj[:, j+1])
-            eq_constr.append(h*aGTJDtj - aGTJp)
+            if enableGroundThorax:
+                # ground thorax joints activation dynamics (explicit formulation) 
+                aGTJDtj = f_groundThoraxJointsDynamics(eGTJk, aGTJkj[:, j+1])
+                eq_constr.append(h*aGTJDtj - aGTJp)
             
             ###################################################################
             # Path constraints        
@@ -1576,12 +1620,13 @@ for case in cases:
                     aActJkj[count, j+1], 0)
                 eq_constr.append(diffTj)
                 
-            # Actuate ground thorax joints with ideal motor torques
-            for count, joint in enumerate(groundThoraxJoints):
-                diffTj = f_diffTorques(
-                    Tj[joints.index(joint)] / scalingGTJE.iloc[0][joint],
-                    aGTJkj[count, j+1], 0)
-                eq_constr.append(diffTj)
+            if enableGroundThorax:
+                # Actuate ground thorax joints with ideal motor torques
+                for count, joint in enumerate(groundThoraxJoints):
+                    diffTj = f_diffTorques(
+                        Tj[joints.index(joint)] / scalingGTJE.iloc[0][joint],
+                        aGTJkj[count, j+1], 0)
+                    eq_constr.append(diffTj)
                 
             # Enforce kinematics constraints 
             eq_constr.append(Tj[idxKinConstraints["applied"]])           
@@ -1777,44 +1822,81 @@ for case in cases:
         opti.subject_to(ca.vec(coll_ineq_constr1) >= 0)
         opti.subject_to(ca.vec(coll_ineq_constr2) <= 1/activationTimeConstant)  
         '''
-        if velocity_correction:
-            if tracking_data == "coordinates":
+        
+        if enableGroundThorax:
+            if velocity_correction:
+                if tracking_data == "coordinates":
+                    f_coll = ca.Function('f_coll', 
+                                         [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
+                                          aGTJk, aGTJj, eActJk, eGTJk, Qdotdotsj,
+                                          lambdaj, gammaj], [eq_constr, J])
+                elif tracking_data == "imus":
+                    f_coll = ca.Function('f_coll', 
+                                         [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
+                                          aGTJk, aGTJj, eActJk, eGTJk, Qdotdotsj,
+                                          lambdaj, gammaj], [eq_constr, J, imuj]) 
+            else:
                 f_coll = ca.Function('f_coll', 
                                      [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
                                       aGTJk, aGTJj, eActJk, eGTJk, Qdotdotsj,
-                                      lambdaj, gammaj], [eq_constr, J])
-            elif tracking_data == "imus":
-                f_coll = ca.Function('f_coll', 
-                                     [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
-                                      aGTJk, aGTJj, eActJk, eGTJk, Qdotdotsj,
-                                      lambdaj, gammaj], [eq_constr, J, imuj]) 
+                                      lambdaj], [eq_constr, J])   
         else:
-            f_coll = ca.Function('f_coll', 
-                                 [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
-                                  aGTJk, aGTJj, eActJk, eGTJk, Qdotdotsj,
-                                  lambdaj], [eq_constr, J])         
+            if velocity_correction:
+                if tracking_data == "coordinates":
+                    f_coll = ca.Function('f_coll', 
+                                         [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
+                                          eActJk, Qdotdotsj,
+                                          lambdaj, gammaj], [eq_constr, J])
+                elif tracking_data == "imus":
+                    f_coll = ca.Function('f_coll', 
+                                         [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
+                                          eActJk, Qdotdotsj,
+                                          lambdaj, gammaj], [eq_constr, J, imuj]) 
+            else:
+                f_coll = ca.Function('f_coll', 
+                                     [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
+                                      eActJk, Qdotdotsj,
+                                      lambdaj], [eq_constr, J])  
         # Create map construct
         f_coll_map = f_coll.map(N, parallelMode, NThreads)   
         # Call function with opti variables and set constraints
-        if velocity_correction:
-            if tracking_data == "coordinates":
+        if enableGroundThorax:
+            if velocity_correction:
+                if tracking_data == "coordinates":
+                    (coll_eq_constr, JPred) = (
+                        f_coll_map(Qs[:, :-1], Qs_col, Qdots[:, :-1], Qdots_col, 
+                                   aActJ[:, :-1], aActJ_col, aGTJ[:, :-1],
+                                   aGTJ_col, eActJ, eGTJ, Qdotdots_col, lambda_col,
+                                   gamma_col))  
+                elif tracking_data == "imus":
+                    (coll_eq_constr, JPred, imu_sim_nsc) = (
+                        f_coll_map(Qs[:, :-1], Qs_col, Qdots[:, :-1], Qdots_col, 
+                                   aActJ[:, :-1], aActJ_col, aGTJ[:, :-1],
+                                   aGTJ_col, eActJ, eGTJ, Qdotdots_col, lambda_col,
+                                   gamma_col))                      
+            else:
                 (coll_eq_constr, JPred) = (
                     f_coll_map(Qs[:, :-1], Qs_col, Qdots[:, :-1], Qdots_col, 
                                aActJ[:, :-1], aActJ_col, aGTJ[:, :-1],
-                               aGTJ_col, eActJ, eGTJ, Qdotdots_col, lambda_col,
-                               gamma_col))  
-            elif tracking_data == "imus":
-                (coll_eq_constr, JPred, imu_sim_nsc) = (
-                    f_coll_map(Qs[:, :-1], Qs_col, Qdots[:, :-1], Qdots_col, 
-                               aActJ[:, :-1], aActJ_col, aGTJ[:, :-1],
-                               aGTJ_col, eActJ, eGTJ, Qdotdots_col, lambda_col,
-                               gamma_col))                      
+                               aGTJ_col, eActJ, eGTJ, Qdotdots_col,
+                               lambda_col))
         else:
-            (coll_eq_constr, JPred) = (
-                f_coll_map(Qs[:, :-1], Qs_col, Qdots[:, :-1], Qdots_col, 
-                           aActJ[:, :-1], aActJ_col, aGTJ[:, :-1],
-                           aGTJ_col, eActJ, eGTJ, Qdotdots_col,
-                           lambda_col))
+            if velocity_correction:
+                if tracking_data == "coordinates":
+                    (coll_eq_constr, JPred) = (
+                        f_coll_map(Qs[:, :-1], Qs_col, Qdots[:, :-1], Qdots_col, 
+                                   aActJ[:, :-1], aActJ_col, eActJ, Qdotdots_col, lambda_col,
+                                   gamma_col))  
+                elif tracking_data == "imus":
+                    (coll_eq_constr, JPred, imu_sim_nsc) = (
+                        f_coll_map(Qs[:, :-1], Qs_col, Qdots[:, :-1], Qdots_col, 
+                                   aActJ[:, :-1], aActJ_col, eActJ, Qdotdots_col, lambda_col,
+                                   gamma_col))                      
+            else:
+                (coll_eq_constr, JPred) = (
+                    f_coll_map(Qs[:, :-1], Qs_col, Qdots[:, :-1], Qdots_col, 
+                               aActJ[:, :-1], aActJ_col, eActJ, Qdotdots_col,
+                               lambda_col))
                 
         opti.subject_to(ca.vec(coll_eq_constr) == 0)
                 
@@ -1827,14 +1909,16 @@ for case in cases:
             Qskj2 = (ca.horzcat(Qs[:, k], Qs_col[:, k*d:(k+1)*d]))
             Qdotskj2 = (ca.horzcat(Qdots[:, k], Qdots_col[:, k*d:(k+1)*d]))  
             aActJkj2 = (ca.horzcat(aActJ[:, k], aActJ_col[:, k*d:(k+1)*d]))
-            aGTJkj2 = (ca.horzcat(aGTJ[:, k], aGTJ_col[:, k*d:(k+1)*d]))
+            if enableGroundThorax:
+                aGTJkj2 = (ca.horzcat(aGTJ[:, k], aGTJ_col[:, k*d:(k+1)*d]))
             
             # opti.subject_to(a[:, k+1] == ca.mtimes(akj2, D))
             # opti.subject_to(normF[:, k+1] == ca.mtimes(normFkj2, D))    
             opti.subject_to(Qs[:, k+1] == ca.mtimes(Qskj2, D))
             opti.subject_to(Qdots[:, k+1] == ca.mtimes(Qdotskj2, D))    
             opti.subject_to(aActJ[:, k+1] == ca.mtimes(aActJkj2, D))
-            opti.subject_to(aGTJ[:, k+1] == ca.mtimes(aGTJkj2, D))
+            if enableGroundThorax:
+                opti.subject_to(aGTJ[:, k+1] == ca.mtimes(aGTJkj2, D))
             
         #######################################################################
         # Add tracking terms, only at the mesh points.  
@@ -2041,12 +2125,13 @@ for case in cases:
         aActJ_col_opt = (np.reshape(w_opt[starti:starti+NActJoints*(d*N)],
                                           (d*N, NActJoints))).T
         starti = starti + NActJoints*(d*N)
-        aGTJ_opt = (np.reshape(w_opt[starti:starti+NGroundThoraxJoints*(N+1)],
-                                      (N+1, NGroundThoraxJoints))).T
-        starti = starti + NGroundThoraxJoints*(N+1)    
-        aGTJ_col_opt = (np.reshape(w_opt[starti:starti+NGroundThoraxJoints*(d*N)],
-                                          (d*N, NGroundThoraxJoints))).T
-        starti = starti + NGroundThoraxJoints*(d*N)
+        if enableGroundThorax:
+            aGTJ_opt = (np.reshape(w_opt[starti:starti+NGroundThoraxJoints*(N+1)],
+                                          (N+1, NGroundThoraxJoints))).T
+            starti = starti + NGroundThoraxJoints*(N+1)    
+            aGTJ_col_opt = (np.reshape(w_opt[starti:starti+NGroundThoraxJoints*(d*N)],
+                                              (d*N, NGroundThoraxJoints))).T
+            starti = starti + NGroundThoraxJoints*(d*N)
         '''
         aDt_opt = (np.reshape(w_opt[starti:starti+NMuscles*N],
                               (N, NMuscles))).T
@@ -2055,9 +2140,10 @@ for case in cases:
         eActJ_opt = (np.reshape(w_opt[starti:starti+NActJoints*N],
                                 (N, NActJoints))).T
         starti = starti + NActJoints*N
-        eGTJ_opt = (np.reshape(w_opt[starti:starti+NGroundThoraxJoints*N],
-                                (N, NGroundThoraxJoints))).T
-        starti = starti + NGroundThoraxJoints*N
+        if enableGroundThorax:
+            eGTJ_opt = (np.reshape(w_opt[starti:starti+NGroundThoraxJoints*N],
+                                    (N, NGroundThoraxJoints))).T
+            starti = starti + NGroundThoraxJoints*N
         '''
         normFDt_col_opt = (np.reshape(w_opt[starti:starti+NMuscles*(d*N)],
                                             (d*N, NMuscles))).T
@@ -2349,7 +2435,8 @@ for case in cases:
         if decomposeCost:     
             # activationTerm_opt_all = 0
             actJExcitationTerm_opt_all = 0
-            gtJExcitationTerm_opt_all = 0
+            if enableGroundThorax:
+                gtJExcitationTerm_opt_all = 0
             jointAccelerationTerm_opt_all = 0
             # activationDtTerm_opt_all = 0
             # forceDtTerm_opt_all = 0
@@ -2369,7 +2456,8 @@ for case in cases:
                 # aDtk_opt = aDt_opt[:, k]
                 # aDtk_opt_nsc = aDt_opt_nsc[:, k]
                 eActJk_opt = eActJ_opt[:, k]
-                eGTJk_opt = eGTJ_opt[:, k]
+                if enableGroundThorax:
+                    eGTJk_opt = eGTJ_opt[:, k]
                 # Slack controls
                 Qdotdotsj_opt = Qdotdots_col_opt[:, k*d:(k+1)*d]
                 Qdotdotsj_opt_nsc = Qdotdotsj_opt * (scalingQdotdots.to_numpy().T * np.ones((1, d)))
@@ -2389,7 +2477,8 @@ for case in cases:
                     # Motor control terms.
                     # activationTerm_opt = f_NMusclesSum2(akj_opt[:, j+1])     
                     actJExcitationTerm_opt = f_NActJointsSum2(eActJk_opt) 
-                    gtJExcitationTerm_opt = f_NGroundThoraxJointsSum2(eGTJk_opt) 
+                    if enableGroundThorax:
+                        gtJExcitationTerm_opt = f_NGroundThoraxJointsSum2(eGTJk_opt) 
                     jointAccelerationTerm_opt = f_NJointsSum2(Qdotdotsj_opt[:, j])       
                     # activationDtTerm_opt = f_NMusclesSum2(aDtk_opt)
                     # forceDtTerm_opt = f_NMusclesSum2(normFDtj_opt[:, j])
@@ -2400,7 +2489,8 @@ for case in cases:
                         
                     # activationTerm_opt_all += weights['activationTerm'] * activationTerm_opt * h * B[j + 1] / timeElapsed 
                     actJExcitationTerm_opt_all += weights['actJExcitationTerm'] * actJExcitationTerm_opt * h * B[j + 1] / timeElapsed
-                    gtJExcitationTerm_opt_all += weights['gtJExcitationTerm'] * gtJExcitationTerm_opt * h * B[j + 1] / timeElapsed 
+                    if enableGroundThorax:
+                        gtJExcitationTerm_opt_all += weights['gtJExcitationTerm'] * gtJExcitationTerm_opt * h * B[j + 1] / timeElapsed 
                     jointAccelerationTerm_opt_all += weights['jointAccelerationTerm'] * jointAccelerationTerm_opt * h * B[j + 1] / timeElapsed 
                     # activationDtTerm_opt_all += weights['controls'] * activationDtTerm_opt * h * B[j + 1] / timeElapsed 
                     # forceDtTerm_opt_all += weights['controls'] * forceDtTerm_opt * h * B[j + 1] / timeElapsed          
@@ -2458,17 +2548,28 @@ for case in cases:
                     * h / timeElapsed).full() 
                     
             # Motor control term
-            if velocity_correction:
-                JMotor_opt = (actJExcitationTerm_opt_all.full() +
-                              gtJExcitationTerm_opt_all.full() +
-                              jointAccelerationTerm_opt_all.full() + 
-                              lambdaTerm_opt_all.full() + 
-                              gammaTerm_opt_all.full())      
+            if enableGroundThorax:
+                if velocity_correction:
+                    JMotor_opt = (actJExcitationTerm_opt_all.full() +
+                                  gtJExcitationTerm_opt_all.full() +
+                                  jointAccelerationTerm_opt_all.full() + 
+                                  lambdaTerm_opt_all.full() + 
+                                  gammaTerm_opt_all.full())      
+                else:
+                    JMotor_opt = (actJExcitationTerm_opt_all.full() + 
+                                  gtJExcitationTerm_opt_all.full() +
+                                  jointAccelerationTerm_opt_all.full() + 
+                                  lambdaTerm_opt_all.full()) 
             else:
-                JMotor_opt = (actJExcitationTerm_opt_all.full() + 
-                              gtJExcitationTerm_opt_all.full() +
-                              jointAccelerationTerm_opt_all.full() + 
-                              lambdaTerm_opt_all.full())                    
+                if velocity_correction:
+                    JMotor_opt = (actJExcitationTerm_opt_all.full() +
+                                  jointAccelerationTerm_opt_all.full() + 
+                                  lambdaTerm_opt_all.full() + 
+                                  gammaTerm_opt_all.full())      
+                else:
+                    JMotor_opt = (actJExcitationTerm_opt_all.full() +
+                                  jointAccelerationTerm_opt_all.full() + 
+                                  lambdaTerm_opt_all.full()) 
             # Combined term
             JAll_opt = JTrack_opt_sc + JMotor_opt
             assert np.alltrue(
@@ -2478,7 +2579,8 @@ for case in cases:
             JTerms = {}
             # JTerms["activationTerm"] = activationTerm_opt_all.full()[0][0]
             JTerms["actJExcitationTerm"] = actJExcitationTerm_opt_all.full()[0][0]
-            JTerms["gtJExcitationTerm"] = gtJExcitationTerm_opt_all.full()[0][0]
+            if enableGroundThorax:
+                JTerms["gtJExcitationTerm"] = gtJExcitationTerm_opt_all.full()[0][0]
             JTerms["jointAccelerationTerm"] = jointAccelerationTerm_opt_all.full()[0][0]
             JTerms["lambdaTerm"] = lambdaTerm_opt_all.full()[0][0]
             if velocity_correction:
@@ -2486,7 +2588,8 @@ for case in cases:
             JTerms["trackingTerm"] = JTrack_opt_sc[0][0]
             # JTerms["activationTerm_sc"] = JTerms["activationTerm"] / JAll_opt[0][0]
             JTerms["actJExcitationTerm_sc"] = JTerms["actJExcitationTerm"] / JAll_opt[0][0]
-            JTerms["gtJExcitationTerm_sc"] = JTerms["gtJExcitationTerm"] / JAll_opt[0][0]
+            if enableGroundThorax:                
+                JTerms["gtJExcitationTerm_sc"] = JTerms["gtJExcitationTerm"] / JAll_opt[0][0]
             JTerms["jointAccelerationTerm_sc"] = JTerms["jointAccelerationTerm"] / JAll_opt[0][0]
             # JTerms["activationDtTerm_sc"] = JTerms["activationDtTerm"] / JAll_opt[0][0]
             # JTerms["forceDtTerm_sc"] = JTerms["forceDtTerm"] / JAll_opt[0][0]
@@ -2497,7 +2600,8 @@ for case in cases:
             
             # print("Activations: " + str(np.round(JTerms["activationTerm_sc"] * 100, 2)) + "%")
             print("ActJ Excitations: " + str(np.round(JTerms["actJExcitationTerm_sc"] * 100, 2)) + "%")
-            print("GTJ Excitations: " + str(np.round(JTerms["gtJExcitationTerm_sc"] * 100, 2)) + "%")
+            if enableGroundThorax:
+                print("GTJ Excitations: " + str(np.round(JTerms["gtJExcitationTerm_sc"] * 100, 2)) + "%")
             print("Joint Accelerations: " + str(np.round(JTerms["jointAccelerationTerm_sc"] * 100, 2)) + "%")
             print("Lambda: " + str(np.round(JTerms["lambdaTerm_sc"] * 100, 2)) + "%")
             if velocity_correction:
@@ -2573,18 +2677,19 @@ for case in cases:
             y = aActJ_col_opt
             title='ActJ activation at collocation points' 
             plotVSBounds(y,lb,ub,title)
-            # Ground thorax joints activation at mesh points
-            lb = lBoundsGTJA.to_numpy().T
-            ub = uBoundsGTJA.to_numpy().T
-            y = aGTJ_opt
-            title='GTJ activation at mesh points' 
-            plotVSBounds(y,lb,ub,title) 
-            # Ground thorax joints activation at collocation points
-            lb = lBoundsGTJA.to_numpy().T
-            ub = uBoundsGTJA.to_numpy().T
-            y = aGTJ_col_opt
-            title='GTJ activation at collocation points' 
-            plotVSBounds(y,lb,ub,title) 
+            if enableGroundThorax:
+                # Ground thorax joints activation at mesh points
+                lb = lBoundsGTJA.to_numpy().T
+                ub = uBoundsGTJA.to_numpy().T
+                y = aGTJ_opt
+                title='GTJ activation at mesh points' 
+                plotVSBounds(y,lb,ub,title) 
+                # Ground thorax joints activation at collocation points
+                lb = lBoundsGTJA.to_numpy().T
+                ub = uBoundsGTJA.to_numpy().T
+                y = aGTJ_col_opt
+                title='GTJ activation at collocation points' 
+                plotVSBounds(y,lb,ub,title) 
             #######################################################################
             # Controls
             '''
@@ -2601,12 +2706,13 @@ for case in cases:
             y = eActJ_opt
             title='ActJ excitation at mesh points' 
             plotVSBounds(y,lb,ub,title) 
-            # Ground thorax joints excitation at mesh points
-            lb = lBoundsGTJE.to_numpy().T
-            ub = uBoundsGTJE.to_numpy().T
-            y = eGTJ_opt
-            title='GTJ excitation at mesh points' 
-            plotVSBounds(y,lb,ub,title)                 
+            if enableGroundThorax:
+                # Ground thorax joints excitation at mesh points
+                lb = lBoundsGTJE.to_numpy().T
+                ub = uBoundsGTJE.to_numpy().T
+                y = eGTJ_opt
+                title='GTJ excitation at mesh points' 
+                plotVSBounds(y,lb,ub,title)                 
             #######################################################################
             # Slack controls
             '''
