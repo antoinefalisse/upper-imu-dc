@@ -337,7 +337,7 @@ def scaleDataFrame(dataFrame, scaling, headers):
         
     return dataFrame_scaled
 
-def selectFromDataFarme(dataFrame, headers):
+def selectFromDataFrame(dataFrame, headers):
     dataFrame_sel = pd.DataFrame(data=dataFrame['time'], columns=['time'])  
     for count, header in enumerate(headers): 
         dataFrame_sel.insert(count+1, header, dataFrame[header])

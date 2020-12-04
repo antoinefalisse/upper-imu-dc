@@ -692,4 +692,29 @@ class bounds:
         
         return upperBoundsVelCorrs, lowerBoundsVelCorrs, scalingVelCorrs
     
+    def getBoundsAngVel(self, imus):
+        lb = [-1] 
+        lb_vec = lb * len(imus)
+        ub = [1]
+        ub_vec = ub * len(imus)
+        s = [10]
+        s_vec = s * len(imus)
+        upperBoundsAngVel = pd.DataFrame([ub_vec], columns=imus)   
+        lowerBoundsAngVel = pd.DataFrame([lb_vec], columns=imus)   
+        scalingAngVel = pd.DataFrame([s_vec], columns=imus)               
+        
+        return (upperBoundsAngVel, lowerBoundsAngVel, scalingAngVel)
+    
+    def getBoundsLinAcc(self, imus):
+        lb = [-1] 
+        lb_vec = lb * len(imus)
+        ub = [1]
+        ub_vec = ub * len(imus)
+        s = [30]
+        s_vec = s * len(imus)
+        upperBoundsLinAcc = pd.DataFrame([ub_vec], columns=imus)   
+        lowerBoundsLinAcc = pd.DataFrame([lb_vec], columns=imus)  
+        scalingLinAcc = pd.DataFrame([s_vec], columns=imus)               
+        
+        return (upperBoundsLinAcc, lowerBoundsLinAcc, scalingLinAcc)    
     

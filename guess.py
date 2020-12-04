@@ -474,3 +474,10 @@ class dataDrivenGuess:
         
         return guessOffset
     
+    def getGuessIMU(self, imus, imu_data, scaling):
+        guessIMU = pd.DataFrame() 
+        for count, imu in enumerate(imus):  
+            guessIMU.insert(count, imu, imu_data[imu] / scaling.iloc[0][imu]) 
+        
+        return guessIMU
+    
