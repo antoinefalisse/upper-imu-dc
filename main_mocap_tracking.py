@@ -14,8 +14,8 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, True, True, True, True, True, True, False, False]
-# run_options = [False, False, True, True, True, True, True, True, True, False]
+# run_options = [True, True, True, True, True, True, True, True, False, False]
+run_options = [False, False, True, True, True, True, True, True, True, False]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -28,7 +28,7 @@ decomposeCost = run_options[7]
 visualizeSimulationResults = run_options[8]
 visualizeConstraintErrors = run_options[9]
 
-cases = ["8"]
+cases = ["9"]
 
 # loadMTParameters = True 
 # loadPolynomialData = True
@@ -36,12 +36,12 @@ plotPolynomials = False
 plotGuessVsBounds = False
 visualizeResultsAgainstBounds = True
 plotMarkerTrackingAtInitialGuess = False
-writeIMUFile = False
+writeIMUFile = True
 
 # Numerical Settings
 tol = 4
 d = 3
-NThreads = 20
+NThreads = 8
 parallelMode = "thread"
 
 from settings import getSettings     
@@ -65,8 +65,11 @@ for case in cases:
     subject = "subject" + subjectID
     model_type = settings[case]['model']
     enableGroundThorax = True
-    if model_type == "weldGT_scaled":
-        enableGroundThorax = False        
+    if model_type == "weldGT_scaled" or model_type == "weldGT_lockedEP_scaled":
+        enableGroundThorax = False     
+    enableElbowProSup = True
+    if model_type == "weldGT_lockedEP_scaled":
+        enableElbowProSup = False
     model = subject + "_" + model_type
     trial = settings[case]['trial']
     timeInterval = settings[case]['timeInterval']
