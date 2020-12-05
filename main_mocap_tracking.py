@@ -12,7 +12,7 @@ import copy
 
 # User settings
 # run_options = [True, True, True, True, True, False, True, False, False]
-run_options = [False, False, True, True, True, False, True, True, True]
+run_options = [False, False, True, True, True, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -30,7 +30,7 @@ cases = ["12"]
 # loadPolynomialData = True
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = True
+visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
 
 # Numerical Settings
@@ -507,7 +507,7 @@ for case in cases:
                 F1 = ca.external('F', prefixF + subject[0] + subject[-1] + 
                                  '_pp.dll')  
                 NOutput_F1 = (NJoints_w_ElbowProSup + 3*NHolConstraints + 
-                              NVelCorrs + 6*3 )                
+                              NVelCorrs + 6*3 + 9)                
     elif tracking_data == "imus":
         if velocity_correction:
             if constraint_pos and constraint_vel and constraint_acc:
@@ -525,7 +525,7 @@ for case in cases:
                 F1 = ca.external('F', prefixF + subject[0] + subject[-1] + 
                                  '_pp.dll')  
                 NOutput_F1 = (NJoints_w_ElbowProSup + 3*NHolConstraints + 
-                              NVelCorrs + 6*3)
+                              NVelCorrs + 6*3 + 9)
     os.chdir(pathMain)
     '''
     vec_in_1 = -np.ones((14*2, 1))
@@ -618,9 +618,13 @@ for case in cases:
     idxIMUs["radius"]["all"]["groundFrame"]["linAcc"] = list(
             range(1 + idxIMUs["radius"]["all"]["groundFrame"]["angVel"][-1], 
                   1 + idxIMUs["radius"]["all"]["groundFrame"]["angVel"][-1]+3))
+    idxIMUs["radius"]["all"]["groundFrame"]["R"] = list(
+            range(1 + idxIMUs["radius"]["all"]["groundFrame"]["linAcc"][-1], 
+                  1 + idxIMUs["radius"]["all"]["groundFrame"]["linAcc"][-1]+9))   
     idxIMUs["radius"]["all"]["groundFrame"]["all"] = (
         idxIMUs["radius"]["all"]["groundFrame"]["angVel"] + 
-        idxIMUs["radius"]["all"]["groundFrame"]["linAcc"])  
+        idxIMUs["radius"]["all"]["groundFrame"]["linAcc"] + 
+        idxIMUs["radius"]["all"]["groundFrame"]["R"])  
     
     idxIMUs["radius"]["applied"] = {}
     idxIMUs["radius"]["applied"]["all"] = []
@@ -2362,6 +2366,7 @@ for case in cases:
         linAcc_sim_opt_bodyFrame = F1_out[idxIMUs["radius"]["all"]["bodyFrame"]["linAcc"], :]   
         angVel_sim_opt_groundFrame = F1_out[idxIMUs["radius"]["all"]["groundFrame"]["angVel"], :]
         linAcc_sim_opt_groundFrame = F1_out[idxIMUs["radius"]["all"]["groundFrame"]["linAcc"], :] 
+        R_sim_opt_groundFrame = F1_out[idxIMUs["radius"]["all"]["groundFrame"]["R"], :] 
         if tracking_data == "imus":
             if stats['success']:
                 if track_imus_frame == "bodyFrame":
@@ -2427,7 +2432,13 @@ for case in cases:
         imu_labels = []
         linAcc_labels = []
         for dimension in dimensions:
-            imu_labels = imu_labels + ["radius_imu_" + dimension]
+            imu_labels = imu_labels + ["radius_imu_" + dimension]            
+        R_order = ['[0][0]', '[0][1]', '[0][2]', 
+                   '[1][0]', '[1][1]', '[1][2]',
+                   '[2][0]', '[2][1]', '[2][2]']
+        R_labels = []
+        for R_orde in R_order:
+            R_labels.append("radius_imu_" + R_orde)   
         if writeIMUFile:
             imu_labels_all = ['time'] + imu_labels  
             angVel_data = np.concatenate((tgridf.T[1::], angVel_sim_opt_bodyFrame.T),axis=1)
@@ -2443,6 +2454,10 @@ for case in cases:
                 pathResults, trial + '_angularVelocities_groundFrame.mot'))
             numpy2storage(imu_labels_all, linAcc_data, os.path.join(
                 pathResults, trial + '_linearAccelerations_groundFrame.mot')) 
+            R_labels_all = ['time'] + R_labels
+            R_data = np.concatenate((tgridf.T[1::], R_sim_opt_groundFrame.T),axis=1)
+            numpy2storage(R_labels_all, R_data, os.path.join(
+                pathResults, trial + '_orientations_groundFrame.mot')) 
 
         # %% Visualize tracking results
         if visualizeTracking:
