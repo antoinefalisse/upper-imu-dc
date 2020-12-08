@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # %% Settings 
 cases = ['11', '12', '13']
-mainName = "main_mocap_tracking"
+mainName = "main_tracking"
 subject = "subject1"
 model = "mtp"
 
