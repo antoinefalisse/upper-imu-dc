@@ -24,7 +24,7 @@ visualizeTracking = run_options[6]
 visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 
-cases = ["12"]
+cases = ["13"]
 
 # loadMTParameters = True 
 # loadPolynomialData = True
@@ -98,8 +98,23 @@ for case in cases:
             weights['trackingTerm_tr'] = settings[case]['w_trackingTerm_tr']
             
     elif tracking_data == "imus":
-        imus_toTrack = settings[case]['imus_toTrack']  
+        imus_toTrack = settings[case]['imus_toTrack'] 
+        imu_directions_toTrack = settings[case]['imu_directions_toTrack']        
         track_imus_frame = settings[case]['track_imus_frame']
+        track_orientations = settings[case]['track_orientations']
+        
+        imuData_toTrack = []
+        for imu in imus_toTrack:
+            for imu_direction in imu_directions_toTrack:
+                imuData_toTrack.append(imu + "_imu_" + imu_direction) 
+        suffix_R = ""   
+        if track_orientations: 
+            suffix_R = "_R"
+            R_order = ['00', '01', '02', '10', '11', '12', '20', '21', '22']
+            R_labels = []
+            for imu in imus_toTrack:
+                for R_orde in R_order:
+                    R_labels.append(imu + "_imu_" + R_orde) 
         
     tgrid = np.linspace(timeInterval[0], timeInterval[1], N+1)
     tgridf = np.zeros((1, N+1))
@@ -445,7 +460,7 @@ for case in cases:
             
     # %% IMU data
     if tracking_data == "imus":
-        NImus_toTrack = len(imus_toTrack)
+        NImuData_toTrack = len(imuData_toTrack)
         from variousFunctions import getFromStorage        
         pathAngVel = os.path.join(pathIMUFolder, trial +
                                   '_angularVelocities_' + track_imus_frame + 
@@ -453,14 +468,27 @@ for case in cases:
         pathLinAcc = os.path.join(pathIMUFolder, trial + 
                                   '_linearAccelerations_' + track_imus_frame +
                                   '.mot')   
-        angVel_data = getFromStorage(pathAngVel, imus_toTrack)
-        linAcc_data = getFromStorage(pathLinAcc, imus_toTrack)
-        
+        angVel_data = getFromStorage(pathAngVel, imuData_toTrack)
+        linAcc_data = getFromStorage(pathLinAcc, imuData_toTrack)        
         angVel_data_interp = interpolateDataFrame(
             angVel_data, timeInterval[0], timeInterval[1], N+1)
         linAcc_data_interp = interpolateDataFrame(
             linAcc_data, timeInterval[0], timeInterval[1], N+1)
-        NEl_toTrack = 2*NImus_toTrack
+        NEl_toTrack = 2*NImuData_toTrack
+        if track_orientations:
+            # In practice, we have rotation matrices rather than Euler angles.
+            # We first compute Euler angles from the rotations matrices. Those
+            # angles will later converted back to rotation matrices when
+            # calculating the error angle between virtual and experimental imu.
+            # Passing rotation matrices to the function where the error angle
+            # is calculated is too risky though. Had weird results when trying.
+            pathR = os.path.join(pathIMUFolder, trial + '_orientations_' + 
+                                  track_imus_frame + '.mot')      
+            R_data = getFromStorage(pathR, R_labels)             
+            from variousFunctions import getBodyFixedXYZFromDataFrameR
+            XYZ_data = getBodyFixedXYZFromDataFrameR(R_data, imuData_toTrack)      
+            XYZ_data_interp = interpolateDataFrame(
+                XYZ_data, timeInterval[0], timeInterval[1], N+1)
     
     # %% Load external functions
     NHolConstraints = 3
@@ -507,7 +535,7 @@ for case in cases:
                 F1 = ca.external('F', prefixF + subject[0] + subject[-1] + 
                                  '_pp.dll')  
                 NOutput_F1 = (NJoints_w_ElbowProSup + 3*NHolConstraints + 
-                              NVelCorrs + 6*3 + 9)                
+                              NVelCorrs + 6*3 + 9 + 3)                
     elif tracking_data == "imus":
         if velocity_correction:
             if constraint_pos and constraint_vel and constraint_acc:
@@ -518,14 +546,24 @@ for case in cases:
                                     '_t1_IMUB.dll')  
                 elif track_imus_frame == "groundFrame":
                     F = ca.external('F', prefixF + subject[0] + subject[-1] +
-                                    '_t1_IMUG.dll')                      
+                                    '_t1_IMUG' + suffix_R + '.dll')                      
                 NKinConstraints = 2*NHolConstraints
+        if track_orientations:
+            # This function returns the error angle between the virtual and
+            # experimental sensor orientations. The Simbody functions used for
+            # this calculation involve a bunch of conditional statements (eg,
+            # when expressing rotations as quaternions) and I was not sure it
+            # would be fine with AD. The funcion derivatives will therefore be
+            # computed with FD. SHould not have too much of an effect.
+            F_RError = ca.external('F', 'RError_Euler_FD.dll', dict(
+                enable_fd=True, enable_forward=False, enable_reverse=False,
+                enable_jacobian=False, fd_method='forward'))
         if analyzeResults:
             if velocity_correction:
                 F1 = ca.external('F', prefixF + subject[0] + subject[-1] + 
                                  '_pp.dll')  
                 NOutput_F1 = (NJoints_w_ElbowProSup + 3*NHolConstraints + 
-                              NVelCorrs + 6*3 + 9)
+                              NVelCorrs + 6*3 + 9 + 3)
     os.chdir(pathMain)
     '''
     vec_in_1 = -np.ones((14*2, 1))
@@ -620,11 +658,15 @@ for case in cases:
                   1 + idxIMUs["radius"]["all"]["groundFrame"]["angVel"][-1]+3))
     idxIMUs["radius"]["all"]["groundFrame"]["R"] = list(
             range(1 + idxIMUs["radius"]["all"]["groundFrame"]["linAcc"][-1], 
-                  1 + idxIMUs["radius"]["all"]["groundFrame"]["linAcc"][-1]+9))   
+                  1 + idxIMUs["radius"]["all"]["groundFrame"]["linAcc"][-1]+9))
+    idxIMUs["radius"]["all"]["groundFrame"]["XYZ"] = list(
+            range(1 + idxIMUs["radius"]["all"]["groundFrame"]["R"][-1], 
+                  1 + idxIMUs["radius"]["all"]["groundFrame"]["R"][-1]+3))
     idxIMUs["radius"]["all"]["groundFrame"]["all"] = (
         idxIMUs["radius"]["all"]["groundFrame"]["angVel"] + 
         idxIMUs["radius"]["all"]["groundFrame"]["linAcc"] + 
-        idxIMUs["radius"]["all"]["groundFrame"]["R"])  
+        idxIMUs["radius"]["all"]["groundFrame"]["R"] +
+        idxIMUs["radius"]["all"]["groundFrame"]["XYZ"])  
     
     idxIMUs["radius"]["applied"] = {}
     idxIMUs["radius"]["applied"]["all"] = []
@@ -639,6 +681,12 @@ for case in cases:
         idxIMUs["radius"]["applied"]["all"] = (
             idxIMUs["radius"]["applied"]["angVel"] + 
             idxIMUs["radius"]["applied"]["linAcc"])
+        if track_orientations:
+            idxIMUs["radius"]["applied"]["XYZ"] = list(
+                range(1 + idxIMUs["radius"]["applied"]["linAcc"][-1], 
+                      1 + idxIMUs["radius"]["applied"]["linAcc"][-1] + 3))
+            idxIMUs["radius"]["applied"]["all"] += (
+                idxIMUs["radius"]["applied"]["XYZ"])            
     idxOutCurrent["applied"] += idxIMUs["radius"]["applied"]["all"]        
    
     # %% CasADi helper functions
@@ -695,7 +743,14 @@ for case in cases:
         f_track_tr_k = ca.Function('f_track_tr_k',
                                   [dataToTrack_trk, dataToTrack_tr_expk],
                                   [dataTrackingTerm_tr])
-        f_track_tr_k_map = f_track_tr_k.map(N+1, parallelMode, NThreads)        
+        f_track_tr_k_map = f_track_tr_k.map(N+1, parallelMode, NThreads) 
+    if track_orientations:        
+        RToTrackk = ca.MX.sym('RToTrackk', 3) 
+        RToTrack_expk = ca.MX.sym('RToTrack_expk', 3)        
+        RError = F_RError(RToTrackk,RToTrack_expk)**2 # error squared
+        f_RToTrack_k = ca.Function('f_RToTrack_k', [RToTrackk, RToTrack_expk],
+                                   [RError])
+        f_RToTrack_k_map = f_RToTrack_k.map(N, parallelMode, NThreads)        
         
     # %% Bounds
     from bounds import bounds
@@ -778,14 +833,20 @@ for case in cases:
     if tracking_data == "imus":
         # Additional controls
         uBAngVel, lBAngVel, scalingAngVel = bounds.getBoundsAngVel(
-            imus_toTrack)
+            imuData_toTrack)
         uBAngVelk = ca.vec(uBAngVel.to_numpy().T * np.ones((1, N))).full()
         lBAngVelk = ca.vec(lBAngVel.to_numpy().T * np.ones((1, N))).full()
         
         uBLinAcc, lBLinAcc, scalingLinAcc = bounds.getBoundsLinAcc(
-            imus_toTrack)
+            imuData_toTrack)
         uBLinAcck = ca.vec(uBLinAcc.to_numpy().T * np.ones((1, N))).full()
         lBLinAcck = ca.vec(lBLinAcc.to_numpy().T * np.ones((1, N))).full()
+        
+        if track_orientations:
+            uBXYZ, lBXYZ, scalingXYZ = bounds.getBoundsXYZ(
+                imuData_toTrack)
+            uBXYZk = ca.vec(uBXYZ.to_numpy().T * np.ones((1, N))).full()
+            lBXYZk = ca.vec(lBXYZ.to_numpy().T * np.ones((1, N))).full()
     
     # uBFDt, lBFDt, scalingFDt = bounds.getBoundsForceDerivative()
     # uBFDtj = ca.vec(uBFDt.to_numpy().T * np.ones((1, d*N))).full()
@@ -863,10 +924,15 @@ for case in cases:
         guessGamma = guess.getGuessVelCorrs()
         guessGammaCol = guess.getGuessVelCorrsCol() 
     if tracking_data == "imus":
-        guessAngVel = guess.getGuessIMU(imus_toTrack, angVel_data_interp,
+        guessAngVel = guess.getGuessIMU(imuData_toTrack, angVel_data_interp,
                                         scalingAngVel)
-        guessLinAcc = guess.getGuessIMU(imus_toTrack, linAcc_data_interp,
+        guessLinAcc = guess.getGuessIMU(imuData_toTrack, linAcc_data_interp,
                                         scalingLinAcc)
+        if track_orientations:
+            guessXYZ = guess.getGuessIMU(imuData_toTrack, XYZ_data_interp,
+                                         scalingXYZ)
+            
+        
     # guessFDt = guess.getGuessForceDerivative(scalingFDt)
     # guessFDtCol = guess.getGuessForceDerivativeCol()  
     
@@ -904,19 +970,24 @@ for case in cases:
         from variousFunctions import scaleDataFrame        
         angVel_data_interp_sc = scaleDataFrame(
             angVel_data_interp, scalingAngVel, 
-            imus_toTrack).to_numpy()[1::,1::].T
+            imuData_toTrack).to_numpy()[1::,1::].T
         linAcc_data_interp_sc = scaleDataFrame(
             linAcc_data_interp, scalingLinAcc,
-            imus_toTrack).to_numpy()[1::,1::].T
+            imuData_toTrack).to_numpy()[1::,1::].T
         dataToTrack_sc = np.concatenate((angVel_data_interp_sc,
-                                         linAcc_data_interp_sc), axis=0)        
+                                         linAcc_data_interp_sc), axis=0)   
         from variousFunctions import selectFromDataFrame 
         angVel_data_interp_nsc = selectFromDataFrame(
-            angVel_data_interp, imus_toTrack).to_numpy()[1::,1::].T
+            angVel_data_interp, imuData_toTrack).to_numpy()[1::,1::].T
         linAcc_data_interp_nsc = selectFromDataFrame(
-            linAcc_data_interp, imus_toTrack).to_numpy()[1::,1::].T
+            linAcc_data_interp, imuData_toTrack).to_numpy()[1::,1::].T
         dataToTrack_nsc = np.concatenate((angVel_data_interp_nsc,
-                                          linAcc_data_interp_nsc), axis=0)        
+                                          linAcc_data_interp_nsc), axis=0)  
+        if track_orientations:
+            XYZ_data_interp_sc = scaleDataFrame(XYZ_data_interp, scalingXYZ,
+                imuData_toTrack).to_numpy()[1::,1::].T           
+            XYZ_data_interp_nsc = selectFromDataFrame(
+                XYZ_data_interp, imuData_toTrack).to_numpy()[1::,1::].T
             
 #     # %% Compare simulated marker trajectories to trajectories to track at IG    
 #     Qsk_IG_sc = guessQs.to_numpy().T[:,1::] 
@@ -1118,14 +1189,14 @@ for case in cases:
         # Additional controls
         if tracking_data == "imus":
             # Angular velocities
-            angVel_u = opti.variable(NImus_toTrack, N)
+            angVel_u = opti.variable(NImuData_toTrack, N)
             opti.subject_to(opti.bounded(lBAngVelk, ca.vec(angVel_u),
                                          uBAngVelk))
             opti.set_initial(angVel_u, guessAngVel.to_numpy().T[:,1::])
             assert np.alltrue(lBAngVelk <= ca.vec(guessAngVel.to_numpy().T[:,1::]).full()), "lb Angular velocities"
             assert np.alltrue(uBAngVelk >= ca.vec(guessAngVel.to_numpy().T[:,1::]).full()), "ub Angular velocities"
             # Linear accelerations
-            linAcc_u = opti.variable(NImus_toTrack, N)
+            linAcc_u = opti.variable(NImuData_toTrack, N)
             opti.subject_to(opti.bounded(lBLinAcck, ca.vec(linAcc_u),
                                          uBLinAcck))
             opti.set_initial(linAcc_u, guessLinAcc.to_numpy().T[:,1::])
@@ -1137,6 +1208,16 @@ for case in cases:
             linAcc_u_nsc = linAcc_u * (
                 scalingLinAcc.to_numpy().T * np.ones((1, N)))
             
+            if track_orientations:
+                # Body-fixed XYZ angles
+                XYZ_u = opti.variable(NImuData_toTrack, N)
+                opti.subject_to(opti.bounded(lBXYZk, ca.vec(XYZ_u), uBXYZk))
+                opti.set_initial(XYZ_u, guessXYZ.to_numpy().T[:,1::])
+                assert np.alltrue(lBXYZk <= ca.vec(guessXYZ.to_numpy().T[:,1::]).full()), "lb XYZ"
+                assert np.alltrue(uBXYZk >= ca.vec(guessXYZ.to_numpy().T[:,1::]).full()), "ub XYZ"
+                # Unscale for equality constraints with model markers
+                XYZ_u_nsc = XYZ_u * (scalingXYZ.to_numpy().T * np.ones((1, N)))
+
 #         #######################################################################
 #         # Additional controls
 #         if tracking_data == "markers" and markers_as_controls:
@@ -1293,7 +1374,13 @@ for case in cases:
                 y = guessLinAcc.to_numpy().T
                 title='Linear accelerations at mesh points' 
                 plotVSBounds(y,lb,ub,title)  
-                
+                if track_orientations:
+                    # XYZ at mesh points
+                    lb = lBXYZ.to_numpy().T
+                    ub = uBXYZ.to_numpy().T
+                    y = guessXYZ.to_numpy().T
+                    title='XYZ at mesh points' 
+                    plotVSBounds(y,lb,ub,title)  
             
             # if tracking_data == "markers" and markers_as_controls:
             #     # Marker trajectories
@@ -2065,16 +2152,18 @@ for case in cases:
             # Since we have additional controls, we need to add constraints
             # imposing those controls to match the simulated data.
             imu_u_nsc = ca.vertcat(angVel_u_nsc, linAcc_u_nsc)
-            opti.subject_to(imu_u_nsc - imu_sim_nsc == 0)   
-                
-#         #######################################################################
-#         if enforceSpeed:
-#             # Average speed constraint
-#             Qs_nsc = Qs * (scalingQs.to_numpy().T * np.ones((1, N+1)))
-#             distTraveled =  (Qs_nsc[joints.index('pelvis_tx'), -1] - 
-#                              Qs_nsc[joints.index('pelvis_tx'), 0])
-#             simSpeed = distTraveled / timeElapsed
-#             opti.subject_to(simSpeed - targetSpeed == 0)
+            opti.subject_to(imu_u_nsc - 
+                            imu_sim_nsc[:imu_u_nsc.shape[0],:] == 0)   
+            
+            if track_orientations:                
+                JTrackR = f_RToTrack_k_map(XYZ_u, XYZ_data_interp_sc)
+                JTrackR_sc = (weights['trackingTerm'] * 
+                              f_mySumTrack(JTrackR) * h / timeElapsed) 
+                JTrack_sc += JTrackR_sc
+                # Since we have additional controls, we need to add constraints
+                # imposing those controls to match the simulated data.
+                opti.subject_to(XYZ_u_nsc - 
+                                imu_sim_nsc[imu_u_nsc.shape[0]:,:] == 0)
             
 #         #######################################################################
 #         if tracking_data == "coordinates": 
@@ -2231,12 +2320,16 @@ for case in cases:
                                                   (d*N, NHolConstraints))).T
             starti = starti + NHolConstraints*(d*N)
         if tracking_data == "imus":
-            angVel_u_opt = (np.reshape(w_opt[starti:starti+NImus_toTrack*(N)],
-                                        (N, NImus_toTrack))).T
-            starti = starti + NImus_toTrack*(N)
-            linAcc_u_opt = (np.reshape(w_opt[starti:starti+NImus_toTrack*(N)],
-                                        (N, NImus_toTrack))).T
-            starti = starti + NImus_toTrack*(N)            
+            angVel_u_opt = (np.reshape(w_opt[starti:starti+NImuData_toTrack*(N)],
+                                        (N, NImuData_toTrack))).T
+            starti = starti + NImuData_toTrack*(N)
+            linAcc_u_opt = (np.reshape(w_opt[starti:starti+NImuData_toTrack*(N)],
+                                        (N, NImuData_toTrack))).T
+            starti = starti + NImuData_toTrack*(N)     
+            if track_orientations:
+                XYZ_u_opt = (np.reshape(w_opt[starti:starti+NImuData_toTrack*(N)],
+                                        (N, NImuData_toTrack))).T
+                starti = starti + NImuData_toTrack*(N)                  
         
         # if tracking_data == "markers" and markers_as_controls:
         #     marker_u_opt = (np.reshape(w_opt[starti:starti+NEl_toTrack*(N)],
@@ -2272,6 +2365,8 @@ for case in cases:
                                             linAcc_u_opt_nsc), axis=0)
             imu_u_opt_sc = np.concatenate((angVel_u_opt,
                                            linAcc_u_opt), axis=0)
+            XYZ_u_opt_nsc = XYZ_u_opt * (scalingXYZ.to_numpy().T * 
+                                         np.ones((1, N)))
         
         # normFDt_col_opt_nsc = normFDt_col_opt * (scalingFDt.to_numpy().T * 
         #                                           np.ones((1, d*N)))
@@ -2367,6 +2462,7 @@ for case in cases:
         angVel_sim_opt_groundFrame = F1_out[idxIMUs["radius"]["all"]["groundFrame"]["angVel"], :]
         linAcc_sim_opt_groundFrame = F1_out[idxIMUs["radius"]["all"]["groundFrame"]["linAcc"], :] 
         R_sim_opt_groundFrame = F1_out[idxIMUs["radius"]["all"]["groundFrame"]["R"], :] 
+        XYZ_sim_opt_groundFrame = F1_out[idxIMUs["radius"]["all"]["groundFrame"]["XYZ"], :]
         if tracking_data == "imus":
             if stats['success']:
                 if track_imus_frame == "bodyFrame":
@@ -2382,7 +2478,11 @@ for case in cases:
                         < 10**(-tol)), "error angVel constraint"      
                     assert np.alltrue(
                         np.abs(linAcc_sim_opt_groundFrame - linAcc_u_opt_nsc) 
-                        < 10**(-tol)), "error linAcc constraint" 
+                        < 10**(-tol)), "error linAcc constraint"
+                if track_orientations:
+                    assert np.alltrue(
+                        np.abs(XYZ_sim_opt_groundFrame - XYZ_u_opt_nsc) 
+                        < 10**(-tol)), "error XYZ constraint"                   
         
 #         # %% Data to track - Adjust for offset  
 #         if tracking_data == "markers": 
@@ -2438,7 +2538,7 @@ for case in cases:
                    '[2][0]', '[2][1]', '[2][2]']
         R_labels = []
         for R_orde in R_order:
-            R_labels.append("radius_imu_" + R_orde)   
+            R_labels.append("radius_imu_" + R_orde)        
         if writeIMUFile:
             imu_labels_all = ['time'] + imu_labels  
             angVel_data = np.concatenate((tgridf.T[1::], angVel_sim_opt_bodyFrame.T),axis=1)
@@ -2454,8 +2554,9 @@ for case in cases:
                 pathResults, trial + '_angularVelocities_groundFrame.mot'))
             numpy2storage(imu_labels_all, linAcc_data, os.path.join(
                 pathResults, trial + '_linearAccelerations_groundFrame.mot')) 
-            R_labels_all = ['time'] + R_labels
-            R_data = np.concatenate((tgridf.T[1::], R_sim_opt_groundFrame.T),axis=1)
+            R_labels_all = ['time'] + R_labels + imu_labels
+            R_data = np.concatenate((tgridf.T[1::], R_sim_opt_groundFrame.T, 
+                                     XYZ_sim_opt_groundFrame.T),axis=1)
             numpy2storage(R_labels_all, R_data, os.path.join(
                 pathResults, trial + '_orientations_groundFrame.mot')) 
 
@@ -2522,8 +2623,12 @@ for case in cases:
                 plt.legend(handles, labels, loc='upper right')
                 
             if tracking_data == "imus":
+                imu_titles = ["Angular velocity x", "Angular velocity y",
+                              "Angular velocity z", "Linear Acceleration x", 
+                              "Linear Acceleration y", "Linear Acceleration z"]
                 fig, axs = plt.subplots(2, 3, sharex=True)    
-                fig.suptitle('Tracking of imus')                  
+                fig.suptitle('Tracking of angular velocities and' \
+                             ' linear accelerations')                  
                 for i, ax in enumerate(axs.flat):
                     # reference data
                     ax.plot(tgridf[0,1::].T, 
@@ -2533,13 +2638,30 @@ for case in cases:
                     ax.plot(tgridf[0,1::].T, 
                             imu_u_opt_nsc[i:i+1,:].T, 
                             c='orange', label='simulated')
-                    # ax.set_title(joints[i])
+                    ax.set_title(imu_titles[i])
                 plt.setp(axs[-1, :], xlabel='Time (s)')
                 # plt.setp(axs[:, 0], ylabel='(deg or m)')
                 fig.align_ylabels()
                 handles, labels = ax.get_legend_handles_labels()
                 plt.legend(handles, labels, loc='upper right')
-                
+                if track_orientations:
+                    fig, axs = plt.subplots(1, 3, sharex=True)    
+                    fig.suptitle('Tracking of orientations')                  
+                    for i, ax in enumerate(axs.flat):
+                        # reference data
+                        ax.plot(tgridf[0,1::].T, 
+                                XYZ_data_interp_nsc[i:i+1,:].T * 180 / np.pi, 
+                                c='black', label='experimental')
+                        # simulated data
+                        ax.plot(tgridf[0,1::].T, 
+                                XYZ_u_opt_nsc[i:i+1,:].T * 180 / np.pi, 
+                                c='orange', label='simulated')
+                        ax.set_title("Euler angle " + dimensions[i])
+                    plt.setp(axs, xlabel='Time (s)')
+                    plt.setp(axs, ylabel='(deg)')
+                    fig.align_ylabels()
+                    handles, labels = ax.get_legend_handles_labels()
+                    plt.legend(handles, labels, loc='upper right')   
                           
         # %% Contribution to the cost function   
         # mATerm_opt_all = 0
@@ -2655,6 +2777,12 @@ for case in cases:
             JTrack_opt_sc = (
                 weights['trackingTerm'] * f_mySumTrack(JTrack_opt) 
                 * h / timeElapsed).full() 
+            if track_orientations:
+                JTrackR_opt = f_RToTrack_k_map(XYZ_u_opt, XYZ_data_interp_sc)
+                JTrackR_opt_sc = (
+                    weights['trackingTerm'] * f_mySumTrack(JTrackR_opt) 
+                    * h / timeElapsed).full() 
+                JTrack_opt_sc += JTrackR_opt_sc
                 
         # Motor control term
         if enableGroundThorax:
@@ -2864,6 +2992,13 @@ for case in cases:
                 y = linAcc_u_opt
                 title='Linear accelerations at mesh points' 
                 plotVSBounds(y,lb,ub,title)
+                if track_orientations:
+                    # XYZ at mesh points
+                    lb = lBXYZ.to_numpy().T
+                    ub = uBXYZ.to_numpy().T
+                    y = XYZ_u_opt
+                    title='XYZ at mesh points' 
+                    plotVSBounds(y,lb,ub,title)
             # # Marker trajectories
             # if markers_as_controls:
             #     lb = lBMarker.to_numpy().T
@@ -2943,7 +3078,6 @@ for case in cases:
             fig.align_ylabels()
             
 #         if visualizeSimulationResults:
-#             #TODO: path references
 #             # Reference from full marker set
 #             pathIKRefFolder = os.path.join(pathSubject, 'IK', 
 #                                            "subject1_scaled_fullMarkerSet_KA")            

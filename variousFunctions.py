@@ -632,3 +632,24 @@ def getHeadingCorrection(path_Orientations, base_imu, heading_axis, ref_axis,
     headingCorrection_std = np.std(headingCorrection)
         
     return headingCorrection_mean, headingCorrection_std, headingCorrection_first, headingCorrection   
+
+def getBodyFixedXYZFromDataFrameR(df_R, dimensions = ['x', 'y', 'z']):
+    R_data = df_R.to_numpy()  
+    
+    XYZ_data = np.zeros((R_data.shape[0], 3))
+    for count in range(R_data.shape[0]):
+        r = R.from_matrix([
+            [R_data[count][1], R_data[count][2], R_data[count][3]],
+            [R_data[count][4], R_data[count][5], R_data[count][6]],
+            [R_data[count][7], R_data[count][8], R_data[count][9]]])
+        XYZ_data_count = r.as_euler('XYZ', degrees=False)  
+        XYZ_data[count,:] = XYZ_data_count.T
+        
+    df_XYZ = pd.DataFrame(data=df_R['time'], columns=['time'])    
+    for count, dimension in enumerate(dimensions):
+        df_XYZ.insert(count + 1, dimension, XYZ_data[:,count])
+        
+    return df_XYZ
+    
+    
+    

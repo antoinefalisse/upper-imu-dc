@@ -716,5 +716,18 @@ class bounds:
         lowerBoundsLinAcc = pd.DataFrame([lb_vec], columns=imus)  
         scalingLinAcc = pd.DataFrame([s_vec], columns=imus)               
         
-        return (upperBoundsLinAcc, lowerBoundsLinAcc, scalingLinAcc)    
+        return (upperBoundsLinAcc, lowerBoundsLinAcc, scalingLinAcc)
+    
+    def getBoundsXYZ(self, imus):
+        lb = [-1] 
+        lb_vec = lb * len(imus)
+        ub = [1]
+        ub_vec = ub * len(imus)
+        s = [np.pi]
+        s_vec = s * len(imus)
+        upperBoundsXYZ = pd.DataFrame([ub_vec], columns=imus)   
+        lowerBoundsXYZ = pd.DataFrame([lb_vec], columns=imus)  
+        scalingXYZ = pd.DataFrame([s_vec], columns=imus)               
+        
+        return (upperBoundsXYZ, lowerBoundsXYZ, scalingXYZ) 
     
