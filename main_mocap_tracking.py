@@ -11,8 +11,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, True, True, True, False, True, False, False]
-run_options = [False, False, True, True, True, True, True, True, True]
+# run_options = [True, True, True, True, True, False, True, False, False, False]
+run_options = [False, False, True, True, False, True, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -23,8 +23,9 @@ writeIMUFile = run_options[5]
 visualizeTracking = run_options[6]
 visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
+saveTrajectories = run_options[9]
 
-cases = ["13"]
+cases = ["11", "12", "13"]
 
 # loadMTParameters = True 
 # loadPolynomialData = True
@@ -137,7 +138,8 @@ for case in cases:
     
     filename = os.path.basename(__file__)
     pathCase = 'Case_' + case
-    pathResults = os.path.join(pathMain, 'Results', filename[:-3], pathCase)  
+    pathTrajectories = os.path.join(pathMain, 'Results', filename[:-3]) 
+    pathResults = os.path.join(pathTrajectories, pathCase)  
     if not os.path.exists(pathResults):
         os.makedirs(pathResults)       
     if tracking_data == "imus":
@@ -2365,8 +2367,9 @@ for case in cases:
                                             linAcc_u_opt_nsc), axis=0)
             imu_u_opt_sc = np.concatenate((angVel_u_opt,
                                            linAcc_u_opt), axis=0)
-            XYZ_u_opt_nsc = XYZ_u_opt * (scalingXYZ.to_numpy().T * 
-                                         np.ones((1, N)))
+            if track_orientations:
+                XYZ_u_opt_nsc = XYZ_u_opt * (scalingXYZ.to_numpy().T * 
+                                             np.ones((1, N)))
         
         # normFDt_col_opt_nsc = normFDt_col_opt * (scalingFDt.to_numpy().T * 
         #                                           np.ones((1, d*N)))
@@ -2587,6 +2590,13 @@ for case in cases:
 #                 plt.legend(handles, labels, loc='upper right')
             refData_nsc = Qs_fromIK_interp.to_numpy()[:,1::].T
             refData_offset_nsc = copy.deepcopy(refData_nsc)
+            for count, joint in enumerate(joints):
+                if joint in rotationalJoints:
+                    scale_angles = 180 / np.pi
+                else:
+                    scale_angles = 1
+                refData_offset_nsc[count,:] = refData_offset_nsc[count,:] * scale_angles
+                    
             # if offset_ty and tracking_data == "coordinates":                    
             #     refData_offset_nsc[joints.index("pelvis_ty")] = (
             #         refData_nsc[joints.index("pelvis_ty")] + 
@@ -2597,13 +2607,9 @@ for case in cases:
                 fig.suptitle('Tracking of joint coordinates')                  
                 for i, ax in enumerate(axs.flat):
                     if i < NJoints:
-                        if joints[i] in rotationalJoints:
-                            scale_angles = 180 / np.pi
-                        else:
-                            scale_angles = 1
                         # reference data
                         ax.plot(tgridf[0,:].T, 
-                                refData_offset_nsc[i:i+1,:].T * scale_angles, 
+                                refData_offset_nsc[i:i+1,:].T, 
                                 c='black', label='experimental')
                         # simulated data
                         if (joints[i] in coordinates_toTrack["rotational"] or 
@@ -2613,7 +2619,7 @@ for case in cases:
                             col_sim = 'blue'
                         
                         ax.plot(tgridf[0,:].T, 
-                                Qs_opt_nsc[i:i+1,:].T * scale_angles, 
+                                Qs_opt_nsc_deg[i:i+1,:].T, 
                                 c=col_sim, label='simulated')
                         ax.set_title(joints[i])
                 plt.setp(axs[-1, :], xlabel='Time (s)')
@@ -2847,6 +2853,28 @@ for case in cases:
         # print("Forces dt: " + str(np.round(JTerms["forceDtTerm_sc"] * 100, 2)) + "%")
         print("Tracking: " + str(np.round(JTerms["trackingTerm_sc"] * 100, 2)) + "%")
         print("# Iterations: " + str(stats["iter_count"]))
+        
+        # %% Save trajectories for further analysis
+        if saveTrajectories: 
+            if not os.path.exists(os.path.join(pathTrajectories,
+                                               'optimaltrajectories.npy')): 
+                    optimaltrajectories = {}
+            else:  
+                optimaltrajectories = np.load(
+                        os.path.join(pathTrajectories,
+                                     'optimaltrajectories.npy'),
+                        allow_pickle=True)   
+                optimaltrajectories = optimaltrajectories.item()  
+            
+            optimaltrajectories[case] = {
+                                'ref_coordinate_values': refData_offset_nsc, 
+                                'sim_coordinate_values': Qs_opt_nsc_deg, 
+                                'sim_coordinate_torques': torques_opt,
+                                'time': tgridf,
+                                'joints': joints,
+                                'objective': stats['iterations']['obj'][-1]}              
+            np.save(os.path.join(pathTrajectories, 'optimaltrajectories.npy'),
+                    optimaltrajectories)
             
         # %% Visualize results against bounds
         if visualizeResultsAgainstBounds:
@@ -3013,17 +3041,13 @@ for case in cases:
             fig.suptitle('Joint coordinates (not tracked)')                  
             for i, ax in enumerate(axs.flat):
                 if i < NJoints:
-                    if joints[i] in rotationalJoints:
-                        scale_angles = 180 / np.pi
-                    else:
-                        scale_angles = 1
                     # reference data
                     ax.plot(tgridf[0,:].T, 
-                            refData_offset_nsc[i:i+1,:].T * scale_angles, 
+                            refData_offset_nsc[i:i+1,:].T, 
                             c='black', label='experimental')
                     # simulated data                    
                     ax.plot(tgridf[0,:].T, 
-                            Qs_opt_nsc[i:i+1,:].T * scale_angles, 
+                            Qs_opt_nsc_deg[i:i+1,:].T, 
                             c='orange', label='simulated')
                     ax.set_title(joints[i])
             plt.setp(axs[-1, :], xlabel='Time (s)')
