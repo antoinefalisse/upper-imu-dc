@@ -11,8 +11,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, True, True, True, False, True, False, False, False]
-run_options = [False, False, True, True, False, True, True, True, True, True]
+run_options = [True, True, True, True, False, False, True, False, False, False]
+# run_options = [False, False, True, True, True, True, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -25,10 +25,10 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["11", "12", "13"]
+cases = ["21"]
 
-# loadMTParameters = True 
-# loadPolynomialData = True
+loadMTParameters = True 
+loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
 visualizeResultsAgainstBounds = False
@@ -126,11 +126,9 @@ for case in cases:
     pathSubject = os.path.join(pathMain, 'OpenSim', subject)
     pathModels = os.path.join(pathSubject, 'Models')
     pathOpenSimModel = os.path.join(pathModels, model + ".osim")    
-    # pathCoordinates = os.path.join(pathSubject, 'MA', 'dummy_motion' 
-    #                                + KA_suffix + '.mot')
-    # pathMuscleAnalysis = os.path.join(pathSubject, 'MA', 'ResultsMA', 
-    #                                   subject + "_scaled" + KA_suffix,
-    #                                   'subject01_MuscleAnalysis_')
+    pathCoordinates = os.path.join(pathSubject, 'MA', 'dummy_motion.mot')
+    pathMuscleAnalysis = os.path.join(pathSubject, 'MA', 'ResultsMA', model,
+                                      'subject01_MuscleAnalysis_')
     pathTRC = os.path.join(pathSubject, 'TRC', trial + ".trc")
     pathExternalFunctions = os.path.join(pathMain, 'ExternalFunctions')
     pathIKFolder = os.path.join(pathSubject, 'IK', model)
@@ -147,56 +145,41 @@ for case in cases:
         pathIMUFolder = os.path.join(pathMain, 'Results', filename[:-3],
                                      referenceIMUResultsCase)
     
-    # %% Muscles
-    '''
-    muscles = ['glut_med1_r', 'glut_med2_r', 'glut_med3_r', 'glut_min1_r', 
-               'glut_min2_r', 'glut_min3_r', 'semimem_r', 'semiten_r',
-               'bifemlh_r', 'bifemsh_r', 'sar_r', 'add_long_r', 'add_brev_r',
-               'add_mag1_r', 'add_mag2_r', 'add_mag3_r', 'tfl_r', 'pect_r',
-               'grac_r', 'glut_max1_r', 'glut_max2_r', 'glut_max3_r',
-               'iliacus_r', 'psoas_r', 'quad_fem_r', 'gem_r', 'peri_r',
-               'rect_fem_r', 'vas_med_r', 'vas_int_r', 'vas_lat_r',
-               'med_gas_r', 'lat_gas_r', 'soleus_r', 'tib_post_r',
-               'flex_dig_r', 'flex_hal_r', 'tib_ant_r', 'per_brev_r',
-               'per_long_r', 'per_tert_r', 'ext_dig_r', 'ext_hal_r',
-               'ercspn_r', 'intobl_r', 'extobl_r', 'ercspn_l', 'intobl_l',
-               'extobl_l']
-    rightSideMuscles = muscles[:-3]
-    leftSideMuscles = [muscle[:-1] + 'l' for muscle in rightSideMuscles]
-    bothSidesMuscles = leftSideMuscles + rightSideMuscles
-    NMuscles = len(bothSidesMuscles)
-    NSideMuscles = len(rightSideMuscles)
+    # %% Muscles    
+    muscles = ['TrapeziusScapula_M', 'TrapeziusScapula_S', 
+               'TrapeziusScapula_I', 'TrapeziusClavicle_S', 
+               'SerratusAnterior_I', 'SerratusAnterior_M', 
+               'SerratusAnterior_S', 'Rhomboideus_S', 'Rhomboideus_I', 
+               'LevatorScapulae', 'Coracobrachialis', 'DeltoideusClavicle_A',
+               'DeltoideusScapula_P', 'DeltoideusScapula_M', 
+               'LatissimusDorsi_S', 'LatissimusDorsi_M', 'LatissimusDorsi_I',
+               'PectoralisMajorClavicle_S', 'PectoralisMajorThorax_I', 
+               'PectoralisMajorThorax_M', 'TeresMajor', 'Infraspinatus_I', 
+               'Infraspinatus_S', 'PectoralisMinor', 'TeresMinor', 
+               'Subscapularis_S', 'Subscapularis_M', 'Subscapularis_I',
+               'Supraspinatus_P', 'Supraspinatus_A', 'TRIlong', 'BIC_long', 
+               'BIC_brevis']
+    NMuscles = len(muscles)
     
     from muscleData import getMTParameters
-    sideMtParameters = getMTParameters(pathOS, pathOpenSimModel,
-                                       rightSideMuscles,
-                                       loadMTParameters, pathModels, model)
-    mtParameters = np.concatenate((sideMtParameters, sideMtParameters), axis=1)
+    mtParameters = getMTParameters(pathOS, pathOpenSimModel, muscles,
+                                   loadMTParameters, pathModels, model)
     
-    from muscleData import tendonCompliance
-    sideTendonCompliance = tendonCompliance(NSideMuscles)
-    tendonCompliance = np.concatenate((sideTendonCompliance, 
-                                       sideTendonCompliance), axis=1)
+    from muscleData import getTendonCompliance
+    tendonCompliance = getTendonCompliance(NMuscles)
     
-    from muscleData import tendonShift
-    sideTendonShift = tendonShift(NSideMuscles)
-    tendonShift = np.concatenate((sideTendonShift, sideTendonShift), axis=1)
+    from muscleData import getTendonShift
+    tendonShift = getTendonShift(NMuscles)
     
-    from muscleData import specificTension_3D
-    sideSpecificTension = specificTension_3D(rightSideMuscles)
-    specificTension = np.concatenate((sideSpecificTension, 
-                                      sideSpecificTension), axis=1)
+    from muscleData import getSpecificTension
+    specificTension = getSpecificTension(NMuscles)
     
     from functionCasADi import hillEquilibrium
     f_hillEquilibrium = hillEquilibrium(mtParameters, tendonCompliance, 
                                         tendonShift, specificTension)
     # Time constants
     activationTimeConstant = 0.015
-    deactivationTimeConstant = 0.06
-    # Symmetry
-    idxSymmetricMuscles = (list(range(NSideMuscles, NMuscles)) + 
-                           list(range(0, NSideMuscles)))
-    '''
+    deactivationTimeConstant = 0.06    
     
     # %% Joints
     from variousFunctions import getJointIndices
@@ -286,61 +269,52 @@ for case in cases:
     f_actJointsDynamics = torqueMotorDynamics(NActJoints)
     f_groundThoraxJointsDynamics = torqueMotorDynamics(NGroundThoraxJoints)
     
-    # %% Polynomials
+    # %% Polynomials    
     '''
     from functionCasADi import polynomialApproximation
-    leftPolynomialJoints = ['hip_flexion_l', 'hip_adduction_l', 
-                            'hip_rotation_l', 'knee_angle_l',
-                            'knee_adduction_l', 'ankle_angle_l',
-                            'subtalar_angle_l', 'mtp_angle_l', 
-                            'lumbar_extension', 'lumbar_bending',
-                            'lumbar_rotation'] 
-    rightPolynomialJoints = ['hip_flexion_r', 'hip_adduction_r', 
-                             'hip_rotation_r', 'knee_angle_r',
-                             'knee_adduction_r', 'ankle_angle_r',
-                             'subtalar_angle_r', 'mtp_angle_r',
-                             'lumbar_extension', 'lumbar_bending',
-                             'lumbar_rotation'] 
-    if not knee_adduction:
-        leftPolynomialJoints.remove('knee_adduction_l')
-        rightPolynomialJoints.remove('knee_adduction_r') 
+    polynomialJoints = ['clav_prot', 'clav_elev', 'scapula_abduction', 
+                        'scapula_elevation', 'scapula_upward_rot', 
+                        'scapula_winging', 'plane_elv', 'shoulder_elv', 
+                        'axial_rot', 'elbow_flexion', 'pro_sup']    
+    if not enableElbowProSup:
+        polynomialJoints.remove('elbow_flexion')
+        polynomialJoints.remove('pro_sup') 
+    NPolynomials = len(polynomialJoints)
+    idxPolynomialJoints = getJointIndices(joints, polynomialJoints)   
     
     from muscleData import getPolynomialData      
     polynomialData = getPolynomialData(loadPolynomialData, pathModels, model,
                                        pathCoordinates, pathMuscleAnalysis,
-                                       rightPolynomialJoints, muscles)        
+                                       polynomialJoints, muscles)        
     if loadPolynomialData:
         polynomialData = polynomialData.item()
-    
-    NPolynomials = len(leftPolynomialJoints)
-    f_polynomial = polynomialApproximation(muscles, polynomialData,
-                                           NPolynomials)
-    leftPolynomialJointIndices = getJointIndices(joints, leftPolynomialJoints)
-    rightPolynomialJointIndices = getJointIndices(joints,rightPolynomialJoints)    
-    leftPolynomialMuscleIndices = list(range(43)) +  list(range(46, 49))
-    rightPolynomialMuscleIndices = list(range(46))
+        
+    f_polynomial = polynomialApproximation(muscles, polynomialData, 
+                                           NPolynomials) 
+    idxPolynomialMuscles = list(range(NMuscles))
     from variousFunctions import getMomentArmIndices
-    momentArmIndices = getMomentArmIndices(rightSideMuscles,
-                                           leftPolynomialJoints,
-                                           rightPolynomialJoints, 
+    momentArmIndices = getMomentArmIndices(muscles, polynomialJoints,
                                            polynomialData)
-    trunkMomentArmPolynomialIndices = list(range(46, 49)) + list(range(43, 46))
     
     from functionCasADi import sumProd
-    f_NHipSumProd = sumProd(len(momentArmIndices['hip_flexion_r']))
-    f_NKneeSumProd = sumProd(len(momentArmIndices['knee_angle_r']))
-    f_NAnkleSumProd = sumProd(len(momentArmIndices['ankle_angle_r']))
-    f_NSubtalarSumProd = sumProd(len(momentArmIndices['subtalar_angle_r']))
-    f_NTrunkSumProd = sumProd(len(momentArmIndices['lumbar_extension']))
+    f_N_clav_prot_SumProd = sumProd(len(momentArmIndices['clav_prot']))
+    f_N_clav_elev_SumProd = sumProd(len(momentArmIndices['clav_elev']))
+    f_N_scapula_abduction_SumProd = sumProd(len(momentArmIndices['scapula_abduction']))
+    f_N_scapula_elevation_SumProd = sumProd(len(momentArmIndices['scapula_elevation']))
+    f_N_scapula_upward_rot_SumProd = sumProd(len(momentArmIndices['scapula_upward_rot']))
+    f_N_scapula_winging_SumProd = sumProd(len(momentArmIndices['scapula_winging']))
+    f_N_plane_elv_SumProd = sumProd(len(momentArmIndices['plane_elv']))
+    f_N_shoulder_elv_SumProd = sumProd(len(momentArmIndices['shoulder_elv']))
+    f_N_axial_rot_SumProd = sumProd(len(momentArmIndices['axial_rot']))
     
-    # Test polynomials
-    if plotPolynomials:
-        from polynomials import testPolynomials
-        momentArms = testPolynomials(pathCoordinates, pathMuscleAnalysis, 
-                                      rightPolynomialJoints, muscles, 
-                                      f_polynomial, polynomialData, 
-                                      momentArmIndices,
-                                      trunkMomentArmPolynomialIndices)
+    # # Test polynomials
+    # if plotPolynomials:
+    #     from polynomials import testPolynomials
+    #     momentArms = testPolynomials(pathCoordinates, pathMuscleAnalysis, 
+    #                                   rightPolynomialJoints, muscles, 
+    #                                   f_polynomial, polynomialData, 
+    #                                   momentArmIndices,
+    #                                   trunkMomentArmPolynomialIndices)
     
 #     # %% Metabolic energy model    
 #     """
@@ -746,13 +720,14 @@ for case in cases:
                                   [dataToTrack_trk, dataToTrack_tr_expk],
                                   [dataTrackingTerm_tr])
         f_track_tr_k_map = f_track_tr_k.map(N+1, parallelMode, NThreads) 
-    if track_orientations:        
-        RToTrackk = ca.MX.sym('RToTrackk', 3) 
-        RToTrack_expk = ca.MX.sym('RToTrack_expk', 3)        
-        RError = F_RError(RToTrackk,RToTrack_expk)**2 # error squared
-        f_RToTrack_k = ca.Function('f_RToTrack_k', [RToTrackk, RToTrack_expk],
-                                   [RError])
-        f_RToTrack_k_map = f_RToTrack_k.map(N, parallelMode, NThreads)        
+    if tracking_data == "imus":
+        if track_orientations:        
+            RToTrackk = ca.MX.sym('RToTrackk', 3) 
+            RToTrack_expk = ca.MX.sym('RToTrack_expk', 3)        
+            RError = F_RError(RToTrackk,RToTrack_expk)**2 # error squared
+            f_RToTrack_k = ca.Function('f_RToTrack_k',
+                                       [RToTrackk, RToTrack_expk], [RError])
+            f_RToTrack_k_map = f_RToTrack_k.map(N, parallelMode, NThreads)        
         
     # %% Bounds
     from bounds import bounds

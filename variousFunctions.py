@@ -169,23 +169,15 @@ def getJointIndices(joints, selectedJoints):
             
     return jointIndices
 
-def getMomentArmIndices(rightMuscles, leftPolynomialJoints,
-                        rightPolynomialJoints, polynomialData):
+def getMomentArmIndices(muscles, polynomialJoints, polynomialData):
          
     momentArmIndices = {}
-    for count, muscle in enumerate(rightMuscles):        
+    for count, muscle in enumerate(muscles):        
         spanning = polynomialData[muscle]['spanning']
         for i in range(len(spanning)):
             if (spanning[i] == 1):
                 momentArmIndices.setdefault(
-                        leftPolynomialJoints[i], []).append(count)
-    for count, muscle in enumerate(rightMuscles):        
-        spanning = polynomialData[muscle]['spanning']
-        for i in range(len(spanning)):
-            if (spanning[i] == 1):
-                momentArmIndices.setdefault(
-                        rightPolynomialJoints[i], []).append(
-                                count + len(rightMuscles))                
+                        polynomialJoints[i], []).append(count)     
         
     return momentArmIndices
 

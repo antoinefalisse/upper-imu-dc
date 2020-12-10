@@ -3,10 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt  
 
 # %% Settings 
-cases = ['11', '12', '13']
+cases = ['16', '17', '15']
 mainName = "main_tracking"
 subject = "subject1"
-model = "mtp"
 
 # %% Fixed settings
 pathMain = os.getcwd()
