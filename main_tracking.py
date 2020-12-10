@@ -11,8 +11,8 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, True, True, False, False, True, False, False, False]
-# run_options = [False, False, True, True, True, True, True, True, True, True]
+# run_options = [True, True, True, True, False, False, True, False, False, False]
+run_options = [False, False, True, True, True, False, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -25,7 +25,9 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["21"]
+# cases = ["26", "26", "27"]
+cases = ["27"]
+
 
 loadMTParameters = True 
 loadPolynomialData = False

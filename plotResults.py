@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt  
 
 # %% Settings 
-cases = ['16', '17', '15']
+# cases = ['16', '17', '15'] # abduction
+# cases = ['19', '20', '18'] # flexion
+cases = ['26', '27', '25'] # flexion
 mainName = "main_tracking"
 subject = "subject1"
 
