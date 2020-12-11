@@ -6,7 +6,7 @@ taskNames={'abd01';'abd02';'abd03';'flx02';'flx03';'shrug01';'shrug02';'shrug03'
 % taskNames={'flx01'};
 
 Model.LoadOpenSimLibrary('C:\Users\u0101727\Documents\Visual Studio 2017\Projects\ScapulothoracicJointPlugin\install\plugins\ScapulothoracicJointPlugin40.dll');
-
+test = AnalyzeTool();
 for i=1:length(taskNames)
     ikTool = InverseKinematicsTool('IKsetup.xml');
     trcFile = ['..\..\TRC\', taskNames{i},'.trc'];
@@ -16,7 +16,7 @@ for i=1:length(taskNames)
     ikTool.setStartTime(0);
     ikTool.setEndTime(15);
     path_setup = ['.\Setup_IK_', taskNames{i}, '.xml'];
-    ikTool.print(path_setup);
+%     ikTool.print(path_setup);
 %     Command = ['opensim-cmd' ' run-tool ' path_setup];
 %     system(Command);
 end   
