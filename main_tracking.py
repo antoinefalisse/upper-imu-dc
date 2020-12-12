@@ -12,7 +12,7 @@ import copy
 
 # User settings
 # run_options = [True, True, True, True, False, False, True, False, False, False]
-run_options = [False, False, True, True, True, False, True, True, True, True]
+run_options = [False, False, False, True, True, False, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -281,11 +281,18 @@ for case in cases:
         splineJoints.remove('elbow_flexion')
         splineJoints.remove('pro_sup') 
     
-    from splines import generateAnglesInFiles
-    nNodes = 3
+    from splines import getTrainingLMT
+    nNodes = 6
     OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
-    lmt_all = generateAnglesInFiles(pathMA, pathMuscleAnalysis, 
-                          splineJoints, muscles, nNodes, OpenSimDict)
+    trainingLMT = getTrainingLMT(pathMA, pathMuscleAnalysis, 
+                                 splineJoints, muscles, nNodes)
+    from splines import getCoeffs
+    pathLib = "createSpline.dll"
+    splineC = {}
+    for trainingGroup in range(len(trainingLMT)): 
+        splineC[str(trainingGroup)] = getCoeffs(
+            pathLib, trainingLMT[str(trainingGroup)])
+    
     NVec3 = 3
     
     # %% Polynomials    
