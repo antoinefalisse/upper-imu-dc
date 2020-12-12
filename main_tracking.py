@@ -284,7 +284,7 @@ for case in cases:
     from splines import generateAnglesInFiles
     nNodes = 3
     OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
-    generateAnglesInFiles(pathMA, pathMuscleAnalysis, 
+    lmt_all = generateAnglesInFiles(pathMA, pathMuscleAnalysis, 
                           splineJoints, muscles, nNodes, OpenSimDict)
     NVec3 = 3
     

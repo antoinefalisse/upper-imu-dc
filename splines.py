@@ -13,8 +13,7 @@ def generateAnglesInFiles(pathMA, pathMuscleAnalysis, joints, muscles, nNodes,
     
     pathResultsSplines = os.path.join(pathMA, "MA_Splines")
     if not os.path.exists(pathResultsSplines):
-        os.makedirs(pathResultsSplines)    
-    
+        os.makedirs(pathResultsSplines)       
     
     nCoords = len(joints)
     nMuscles = len(muscles)
@@ -46,7 +45,11 @@ def generateAnglesInFiles(pathMA, pathMuscleAnalysis, joints, muscles, nNodes,
                                             maxima[nCoord], nNodes)  
         
     from variousFunctions import numpy2storage
+    lmt = {}
+    lmt_all = {}
     for sp in range(spanningInfo_unique.shape[0]):
+        lmt[str(sp)] = {}
+        lmt_all[str(sp)] = {}
         
         spanningInfo_sp = spanningInfo_unique[sp,:]
         nCoords_sp = np.sum(spanningInfo_sp)
@@ -114,7 +117,8 @@ def generateAnglesInFiles(pathMA, pathMuscleAnalysis, joints, muscles, nNodes,
             pathOpenSimModel = OpenSimDict["pathOpenSimModel"];
             genericSetupFile = os.path.join(pathMA, 'SetupMA_lmt.xml')
             ATool = opensim.AnalyzeTool(genericSetupFile);
-            ATool.setModelFilename(pathOpenSimModel)            
+            ATool.setModelFilename(pathOpenSimModel)     
+            lmt[str(sp)]
             for i in chunkData:
                 ATool.setStartTime(chunkData[i]["time"][0])
                 ATool.setFinalTime(chunkData[i]["time"][-1])                
@@ -127,9 +131,27 @@ def generateAnglesInFiles(pathMA, pathMuscleAnalysis, joints, muscles, nNodes,
                 ATool.printToXML(chunkData[i]["pathFilename"][:-4] + ".xml")   
                 # TODO run tool - make things work with joint
                 
-                # Get MT-length and reconstruct full matrix (multiple chunks)
-                
+                # Get MT-length
+                # Only select the relevant muscles, ie the muscles of that
+                # spanning set.                
                 pathLMT = os.path.join(pathResultsSplinesCase, 
-                                       'subject01_MuscleAnalysis_Lengths.sto')                
-                lmt_all = getFromStorage(pathLMT, muscles[])
-         
+                                       'subject01_MuscleAnalysis_Length.sto')                 
+                idx_muscles_sp = np.where(
+                    (spanningInfo == spanningInfo_sp).all(axis=1))
+                muscles_sp = []
+                for m in range(idx_muscles_sp[0].shape[0]):
+                    muscles_sp += [muscles[idx_muscles_sp[0][m]]]                
+                lmt[str(sp)][i] = getFromStorage(
+                    pathLMT, muscles_sp).to_numpy()[:,1::]
+                
+            # Reconstruct full matrix (multiple chunks)
+            lmt_all[str(sp)]["muscles"] = muscles_sp
+            lmt_all[str(sp)]["data"] = lmt[str(sp)]["0"]
+            if nChunks > 0:
+                for i in range(1,nChunks+1):
+                    lmt_all[str(sp)]["data"] = np.concatenate(
+                        (lmt_all[str(sp)]["data"], lmt[str(sp)][str(i)]),
+                        axis=0)
+                    
+    return lmt_all
+                    
