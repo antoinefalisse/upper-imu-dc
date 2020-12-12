@@ -285,7 +285,7 @@ for case in cases:
     nNodes = 6
     OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
     trainingLMT = getTrainingLMT(pathMA, pathMuscleAnalysis, 
-                                 splineJoints, muscles, nNodes)
+                                 splineJoints, muscles, nNodes, OpenSimDict)
     from splines import getCoeffs
     pathLib = "createSpline.dll"
     splineC = {}
