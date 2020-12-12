@@ -282,6 +282,8 @@ for case in cases:
         splineJoints.remove('pro_sup') 
     
     from splines import getTrainingLMT
+    # Not usable: 6 nodes and 9 dofs results in 10077696 training data and 6
+    # nodes is not enough for accurate approximation.
     nNodes = 6
     OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
     trainingLMT = getTrainingLMT(pathMA, pathMuscleAnalysis, 

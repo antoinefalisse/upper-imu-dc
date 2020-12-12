@@ -47,7 +47,7 @@ def getTrainingLMT(pathMA, pathMuscleAnalysis, joints, muscles, nNodes,
     from variousFunctions import numpy2storage
     lmt = {}
     lmt_all = {}
-    for sp in range(2,spanningInfo_unique.shape[0]):
+    for sp in range(spanningInfo_unique.shape[0]):
         lmt[str(sp)] = {}
         lmt_all[str(sp)] = {}
         
