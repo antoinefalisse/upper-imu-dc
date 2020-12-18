@@ -1,7 +1,7 @@
 from sys import path
 import os
 if os.environ['COMPUTERNAME'] == 'GBW-L-W2003':
-    path.append(r"C:/Users/u0101727/Documents/Software/CasADi/casadi-windows-py37-v3.5.1-64bit")
+    path.append(r"C:/Users/u0101727/Documents/Software/CasADi/casadi-windows-py37-v3.5.5-64bit")
     pathOS = "C:/Users/u0101727/Documents/MyRepositories/opensim-fork/install_ks/sdk/Python"
 elif os.environ['COMPUTERNAME'] == 'GBW-D-W2711':
     path.append(r"C:/Users/Public/Documents/Software/casadi-windows-py37-v3.5.1-64bit")
@@ -12,7 +12,7 @@ import copy
 
 # User settings
 # run_options = [True, True, True, True, False, False, True, False, False, False]
-run_options = [False, False, True, True, True, False, True, True, True, True]
+run_options = [False, False, False, True, True, False, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -127,8 +127,9 @@ for case in cases:
     pathMain = os.getcwd()
     pathSubject = os.path.join(pathMain, 'OpenSim', subject)
     pathModels = os.path.join(pathSubject, 'Models')
-    pathOpenSimModel = os.path.join(pathModels, model + ".osim")    
-    pathCoordinates = os.path.join(pathSubject, 'MA', 'dummy_motion.mot')
+    pathOpenSimModel = os.path.join(pathModels, model + ".osim")   
+    pathMA = os.path.join(pathSubject, 'MA')
+    pathDummyMotion = os.path.join(pathMA, 'dummy_motion.mot')
     pathMuscleAnalysis = os.path.join(pathSubject, 'MA', 'ResultsMA', model,
                                       'subject01_MuscleAnalysis_')
     pathTRC = os.path.join(pathSubject, 'TRC', trial + ".trc")
@@ -271,6 +272,31 @@ for case in cases:
     f_actJointsDynamics = torqueMotorDynamics(NActJoints)
     f_groundThoraxJointsDynamics = torqueMotorDynamics(NGroundThoraxJoints)
     
+    # %% Splines
+    splineJoints = ['clav_prot', 'clav_elev', 'scapula_abduction', 
+                    'scapula_elevation', 'scapula_upward_rot', 
+                    'scapula_winging', 'plane_elv', 'shoulder_elv', 
+                    'axial_rot', 'elbow_flexion', 'pro_sup']    
+    if not enableElbowProSup:
+        splineJoints.remove('elbow_flexion')
+        splineJoints.remove('pro_sup') 
+    
+    from splines import getTrainingLMT
+    # Not usable: 6 nodes and 9 dofs results in 10077696 training data and 6
+    # nodes is not enough for accurate approximation.
+    nNodes = 6
+    OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
+    trainingLMT = getTrainingLMT(pathMA, pathMuscleAnalysis, 
+                                 splineJoints, muscles, nNodes, OpenSimDict)
+    from splines import getCoeffs
+    pathLib = "createSpline.dll"
+    splineC = {}
+    for trainingGroup in range(len(trainingLMT)): 
+        splineC[str(trainingGroup)] = getCoeffs(
+            pathLib, trainingLMT[str(trainingGroup)])
+    
+    NVec3 = 3
+    
     # %% Polynomials    
     '''
     from functionCasADi import polynomialApproximation
@@ -286,7 +312,7 @@ for case in cases:
     
     from muscleData import getPolynomialData      
     polynomialData = getPolynomialData(loadPolynomialData, pathModels, model,
-                                       pathCoordinates, pathMuscleAnalysis,
+                                       pathDummyMotion, pathMuscleAnalysis,
                                        polynomialJoints, muscles)        
     if loadPolynomialData:
         polynomialData = polynomialData.item()
@@ -312,7 +338,7 @@ for case in cases:
     # # Test polynomials
     # if plotPolynomials:
     #     from polynomials import testPolynomials
-    #     momentArms = testPolynomials(pathCoordinates, pathMuscleAnalysis, 
+    #     momentArms = testPolynomials(pathDummyMotion, pathMuscleAnalysis, 
     #                                   rightPolynomialJoints, muscles, 
     #                                   f_polynomial, polynomialData, 
     #                                   momentArmIndices,
