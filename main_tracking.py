@@ -320,18 +320,13 @@ for case in cases:
         idxPolynomialJoints = getJointIndices(joints, polynomialJoints)
         os.chdir(pathExternalFunctions)
         F_getPolyApp = ca.external('f_getPolyApp', prefixF + subject[0] + 
-                                   subject[-1] + '_getPolyApp.dll')
+                                    subject[-1] + '_getPolyApp.dll')
         os.chdir(pathMain) 
         
-        # Spanning info
-        
+        # Spanning info        
         from muscleData import getSpanningInfo           
-        spanningInfo = getSpanningInfo(pathDummyMotion, pathMuscleAnalysis,
-                                       polynomialJoints, muscles)
-        
-        idxSpanningJoints = {}
-        for c, joint in enumerate(polynomialJoints):
-            idxSpanningJoints[joint] = np.where(spanningInfo[:,c] == 1)[0]
+        idxSpanningJoints = getSpanningInfo(pathDummyMotion, pathMuscleAnalysis,
+                                       polynomialJoints, muscles)        
     
     # %% Damping torques
     from functionCasADi import dampingTorque
@@ -1570,7 +1565,7 @@ for case in cases:
                     # Constraint
                     diffTj = f_diffTorques(Tj[joints.index(joint)],
                                            muscleTorquej, dampingTorquej) 
-                    g_eq.append(diffTj)
+                    # g_eq.append(diffTj)
                 # Activation dynamics (implicit formulation)
                 act1 = aDtk_nsc + akj[:, j+1] / deactivationTimeConstant
                 act2 = aDtk_nsc + akj[:, j+1] / activationTimeConstant

@@ -66,7 +66,11 @@ def getSpanningInfo(pathCoordinates, pathMuscleAnalysis, joints, muscles):
     spanningInfo = np.sum(momentArms, axis=0)    
     spanningInfo = np.where(np.logical_and(spanningInfo<=0.0001, spanningInfo>=-0.0001), 0, 1)
     
-    return spanningInfo
+    idxSpanningJoints = {}
+    for c, joint in enumerate(joints):
+        idxSpanningJoints[joint] = np.where(spanningInfo[:,c] == 1)[0]
+    
+    return idxSpanningJoints
 
 def getTendonCompliance(NSideMuscles):
     tendonCompliance = np.full((1, NSideMuscles), 35)
