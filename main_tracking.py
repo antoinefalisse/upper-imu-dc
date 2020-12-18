@@ -32,7 +32,7 @@ cases = ["28"]
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
-plotGuessVsBounds = False
+plotGuessVsBounds = True
 visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
 
@@ -1086,32 +1086,44 @@ for case in cases:
         
         #######################################################################
         # States
-        '''
-        # Musle activation at mesh points
-        a = opti.variable(NMuscles, N+1)
-        opti.subject_to(opti.bounded(lBAk, ca.vec(a), uBAk))
-        opti.set_initial(a, guessA.to_numpy().T)
-        assert np.alltrue(lBAk <= ca.vec(guessA.to_numpy().T).full()), "lb Musle activation"
-        assert np.alltrue(uBAk >= ca.vec(guessA.to_numpy().T).full()), "ub Musle activation"
-        # Musle activation at collocation points
-        a_col = opti.variable(NMuscles, d*N)
-        opti.subject_to(opti.bounded(lBAj, ca.vec(a_col), uBAj))
-        opti.set_initial(a_col, guessACol.to_numpy().T)
-        assert np.alltrue(lBAj <= ca.vec(guessACol.to_numpy().T).full()), "lb Musle activation col"
-        assert np.alltrue(uBAj >= ca.vec(guessACol.to_numpy().T).full()), "ub Musle activation col"
-        # Musle force at mesh points
-        normF = opti.variable(NMuscles, N+1)
-        opti.subject_to(opti.bounded(lBFk, ca.vec(normF), uBFk))
-        opti.set_initial(normF, guessF.to_numpy().T)
-        assert np.alltrue(lBFk <= ca.vec(guessF.to_numpy().T).full()), "lb Musle force"
-        assert np.alltrue(uBFk >= ca.vec(guessF.to_numpy().T).full()), "ub Musle force"
-        # Musle force at collocation points
-        normF_col = opti.variable(NMuscles, d*N)
-        opti.subject_to(opti.bounded(lBFj, ca.vec(normF_col), uBFj))
-        opti.set_initial(normF_col, guessFCol.to_numpy().T)
-        assert np.alltrue(lBFj <= ca.vec(guessFCol.to_numpy().T).full()), "lb Musle force col"
-        assert np.alltrue(uBFj >= ca.vec(guessFCol.to_numpy().T).full()), "ub Musle force col"
-        '''
+        if actuation == 'muscle-driven':
+            # Musle activation at mesh points
+            a = opti.variable(NMuscles, N+1)
+            opti.subject_to(opti.bounded(lBAk, ca.vec(a), uBAk))
+            opti.set_initial(a, guessA.to_numpy().T)
+            assert np.alltrue(lBAk <= ca.vec(guessA.to_numpy().T).full()), "lb Musle activation"
+            assert np.alltrue(uBAk >= ca.vec(guessA.to_numpy().T).full()), "ub Musle activation"
+            # Musle activation at collocation points
+            a_col = opti.variable(NMuscles, d*N)
+            opti.subject_to(opti.bounded(lBAj, ca.vec(a_col), uBAj))
+            opti.set_initial(a_col, guessACol.to_numpy().T)
+            assert np.alltrue(lBAj <= ca.vec(guessACol.to_numpy().T).full()), "lb Musle activation col"
+            assert np.alltrue(uBAj >= ca.vec(guessACol.to_numpy().T).full()), "ub Musle activation col"
+            # Musle force at mesh points
+            normF = opti.variable(NMuscles, N+1)
+            opti.subject_to(opti.bounded(lBFk, ca.vec(normF), uBFk))
+            opti.set_initial(normF, guessF.to_numpy().T)
+            assert np.alltrue(lBFk <= ca.vec(guessF.to_numpy().T).full()), "lb Musle force"
+            assert np.alltrue(uBFk >= ca.vec(guessF.to_numpy().T).full()), "ub Musle force"
+            # Musle force at collocation points
+            normF_col = opti.variable(NMuscles, d*N)
+            opti.subject_to(opti.bounded(lBFj, ca.vec(normF_col), uBFj))
+            opti.set_initial(normF_col, guessFCol.to_numpy().T)
+            assert np.alltrue(lBFj <= ca.vec(guessFCol.to_numpy().T).full()), "lb Musle force col"
+            assert np.alltrue(uBFj >= ca.vec(guessFCol.to_numpy().T).full()), "ub Musle force col"
+        elif actuation == 'torque-driven':
+            # Actuated joints activation at mesh points
+            aActJ = opti.variable(NActJoints, N+1)
+            opti.subject_to(opti.bounded(lBActJAk, ca.vec(aActJ), uBActJAk))
+            opti.set_initial(aActJ, guessActJA.to_numpy().T)
+            assert np.alltrue(lBActJAk <= ca.vec(guessActJA.to_numpy().T).full()), "lb ActJ activation"
+            assert np.alltrue(uBActJAk >= ca.vec(guessActJA.to_numpy().T).full()), "ub ActJ activation"
+            # Actuated joints activation at collocation points
+            aActJ_col = opti.variable(NActJoints, d*N)
+            opti.subject_to(opti.bounded(lBActJAj, ca.vec(aActJ_col), uBActJAj))
+            opti.set_initial(aActJ_col, guessActJACol.to_numpy().T)
+            assert np.alltrue(lBActJAj <= ca.vec(guessActJACol.to_numpy().T).full()), "lb ActJ activation col"
+            assert np.alltrue(uBActJAj >= ca.vec(guessActJACol.to_numpy().T).full()), "ub ActJ activation col"        
         # Joint position at mesh points
         Qs = opti.variable(NJoints, N+1)
         opti.subject_to(opti.bounded(lBQsk, ca.vec(Qs), uBQsk))
@@ -1135,19 +1147,7 @@ for case in cases:
         opti.subject_to(opti.bounded(lBQdotsj, ca.vec(Qdots_col), uBQdotsj))
         opti.set_initial(Qdots_col, guessQdotsCol.to_numpy().T)
         assert np.alltrue(lBQdotsj <= ca.vec(guessQdotsCol.to_numpy().T).full()), "lb Joint velocity col"
-        assert np.alltrue(uBQdotsj >= ca.vec(guessQdotsCol.to_numpy().T).full()), "ub Joint velocity col"
-        # Actuated joints activation at mesh points
-        aActJ = opti.variable(NActJoints, N+1)
-        opti.subject_to(opti.bounded(lBActJAk, ca.vec(aActJ), uBActJAk))
-        opti.set_initial(aActJ, guessActJA.to_numpy().T)
-        assert np.alltrue(lBActJAk <= ca.vec(guessActJA.to_numpy().T).full()), "lb ActJ activation"
-        assert np.alltrue(uBActJAk >= ca.vec(guessActJA.to_numpy().T).full()), "ub ActJ activation"
-        # Actuated joints activation at collocation points
-        aActJ_col = opti.variable(NActJoints, d*N)
-        opti.subject_to(opti.bounded(lBActJAj, ca.vec(aActJ_col), uBActJAj))
-        opti.set_initial(aActJ_col, guessActJACol.to_numpy().T)
-        assert np.alltrue(lBActJAj <= ca.vec(guessActJACol.to_numpy().T).full()), "lb ActJ activation col"
-        assert np.alltrue(uBActJAj >= ca.vec(guessActJACol.to_numpy().T).full()), "ub ActJ activation col"
+        assert np.alltrue(uBQdotsj >= ca.vec(guessQdotsCol.to_numpy().T).full()), "ub Joint velocity col"        
         if enableGroundThorax:
             # Ground thorax joints activation at mesh points
             aGTJ = opti.variable(NGroundThoraxJoints, N+1)
@@ -1164,20 +1164,20 @@ for case in cases:
         
         #######################################################################
         # Controls
-        '''
-        # Muscle activation derivative at mesh points
-        aDt = opti.variable(NMuscles, N)
-        opti.subject_to(opti.bounded(lBADtk, ca.vec(aDt), uBADtk))
-        opti.set_initial(aDt, guessADt.to_numpy().T)
-        assert np.alltrue(lBADtk <= ca.vec(guessADt.to_numpy().T).full()), "lb Muscle activation derivative"
-        assert np.alltrue(uBADtk >= ca.vec(guessADt.to_numpy().T).full()), "ub Muscle activation derivative"
-        '''
-        # Actuated joints excitation at mesh points
-        eActJ = opti.variable(NActJoints, N)
-        opti.subject_to(opti.bounded(lBActJEk, ca.vec(eActJ), uBActJEk))
-        opti.set_initial(eActJ, guessActJE.to_numpy().T)
-        assert np.alltrue(lBActJEk <= ca.vec(guessActJE.to_numpy().T).full()), "lb ActJ excitation"
-        assert np.alltrue(uBActJEk >= ca.vec(guessActJE.to_numpy().T).full()), "ub ActJ excitation"
+        if actuation == 'muscle-driven':
+            # Muscle activation derivative at mesh points
+            aDt = opti.variable(NMuscles, N)
+            opti.subject_to(opti.bounded(lBADtk, ca.vec(aDt), uBADtk))
+            opti.set_initial(aDt, guessADt.to_numpy().T)
+            assert np.alltrue(lBADtk <= ca.vec(guessADt.to_numpy().T).full()), "lb Muscle activation derivative"
+            assert np.alltrue(uBADtk >= ca.vec(guessADt.to_numpy().T).full()), "ub Muscle activation derivative"
+        elif actuation == 'torque-driven':
+            # Actuated joints excitation at mesh points
+            eActJ = opti.variable(NActJoints, N)
+            opti.subject_to(opti.bounded(lBActJEk, ca.vec(eActJ), uBActJEk))
+            opti.set_initial(eActJ, guessActJE.to_numpy().T)
+            assert np.alltrue(lBActJEk <= ca.vec(guessActJE.to_numpy().T).full()), "lb ActJ excitation"
+            assert np.alltrue(uBActJEk >= ca.vec(guessActJE.to_numpy().T).full()), "ub ActJ excitation"
         if enableGroundThorax:
             # Ground thorax joints excitation at mesh points
             eGTJ = opti.variable(NGroundThoraxJoints, N)
@@ -1188,14 +1188,13 @@ for case in cases:
         
         #######################################################################
         # Slack controls
-        '''
-        # Muscle force derivative at collocation points
-        normFDt_col = opti.variable(NMuscles, d*N)
-        opti.subject_to(opti.bounded(lBFDtj, ca.vec(normFDt_col), uBFDtj))
-        opti.set_initial(normFDt_col, guessFDtCol.to_numpy().T)
-        assert np.alltrue(lBFDtj <= ca.vec(guessFDtCol.to_numpy().T).full()), "lb Muscle force derivative"
-        assert np.alltrue(uBFDtj >= ca.vec(guessFDtCol.to_numpy().T).full()), "ub Muscle force derivative"
-        '''
+        if actuation == 'muscle-driven':
+            # Muscle force derivative at collocation points
+            normFDt_col = opti.variable(NMuscles, d*N)
+            opti.subject_to(opti.bounded(lBFDtj, ca.vec(normFDt_col), uBFDtj))
+            opti.set_initial(normFDt_col, guessFDtCol.to_numpy().T)
+            assert np.alltrue(lBFDtj <= ca.vec(guessFDtCol.to_numpy().T).full()), "lb Muscle force derivative"
+            assert np.alltrue(uBFDtj >= ca.vec(guessFDtCol.to_numpy().T).full()), "ub Muscle force derivative"
         # Joint velocity derivative (acceleration) at collocation points
         Qdotdots_col = opti.variable(NJoints, d*N)
         opti.subject_to(opti.bounded(lBQdotdotsj, ca.vec(Qdotdots_col),
@@ -1268,32 +1267,44 @@ for case in cases:
         if plotGuessVsBounds:   
             from variousFunctions import plotVSBounds
             # States
-            '''
-            # Muscle activation at mesh points            
-            lb = lBA.to_numpy().T
-            ub = uBA.to_numpy().T
-            y = guessA.to_numpy().T
-            title='Muscle activation at mesh points'            
-            plotVSBounds(y,lb,ub,title)  
-            # Muscle activation at collocation points
-            lb = lBA.to_numpy().T
-            ub = uBA.to_numpy().T
-            y = guessACol.to_numpy().T
-            title='Muscle activation at collocation points' 
-            plotVSBounds(y,lb,ub,title)  
-            # Muscle force at mesh points
-            lb = lBF.to_numpy().T
-            ub = uBF.to_numpy().T
-            y = guessF.to_numpy().T
-            title='Muscle force at mesh points' 
-            plotVSBounds(y,lb,ub,title)  
-            # Muscle force at collocation points
-            lb = lBF.to_numpy().T
-            ub = uBF.to_numpy().T
-            y = guessFCol.to_numpy().T
-            title='Muscle force at collocation points' 
-            plotVSBounds(y,lb,ub,title)
-            '''
+            if actuation == 'muscle-driven':
+                # Muscle activation at mesh points            
+                lb = lBA.to_numpy().T
+                ub = uBA.to_numpy().T
+                y = guessA.to_numpy().T
+                title='Muscle activation at mesh points'            
+                plotVSBounds(y,lb,ub,title)  
+                # Muscle activation at collocation points
+                lb = lBA.to_numpy().T
+                ub = uBA.to_numpy().T
+                y = guessACol.to_numpy().T
+                title='Muscle activation at collocation points' 
+                plotVSBounds(y,lb,ub,title)  
+                # Muscle force at mesh points
+                lb = lBF.to_numpy().T
+                ub = uBF.to_numpy().T
+                y = guessF.to_numpy().T
+                title='Muscle force at mesh points' 
+                plotVSBounds(y,lb,ub,title)  
+                # Muscle force at collocation points
+                lb = lBF.to_numpy().T
+                ub = uBF.to_numpy().T
+                y = guessFCol.to_numpy().T
+                title='Muscle force at collocation points' 
+                plotVSBounds(y,lb,ub,title)
+            elif actuation == 'torque-driven':
+                # Actuated joints activation at mesh points
+                lb = lBActJA.to_numpy().T
+                ub = uBActJA.to_numpy().T
+                y = guessActJA.to_numpy().T
+                title='ActJ activation at mesh points' 
+                plotVSBounds(y,lb,ub,title) 
+                # Actuated joints activation at collocation points
+                lb = lBActJA.to_numpy().T
+                ub = uBActJA.to_numpy().T
+                y = guessActJACol.to_numpy().T
+                title='ActJ activation at collocation points' 
+                plotVSBounds(y,lb,ub,title)
             # Joint position at mesh points
             lb = lBQs.to_numpy().T
             ub = uBQs.to_numpy().T
@@ -1318,18 +1329,6 @@ for case in cases:
             y = guessQdotsCol.to_numpy().T
             title='Joint velocity at collocation points' 
             plotVSBounds(y,lb,ub,title) 
-            # Actuated joints activation at mesh points
-            lb = lBActJA.to_numpy().T
-            ub = uBActJA.to_numpy().T
-            y = guessActJA.to_numpy().T
-            title='ActJ activation at mesh points' 
-            plotVSBounds(y,lb,ub,title) 
-            # Actuated joints activation at collocation points
-            lb = lBActJA.to_numpy().T
-            ub = uBActJA.to_numpy().T
-            y = guessActJACol.to_numpy().T
-            title='ActJ activation at collocation points' 
-            plotVSBounds(y,lb,ub,title) 
             if enableGroundThorax:
                 # Ground thorax joints activation at mesh points
                 lb = lBGTJA.to_numpy().T
@@ -1345,20 +1344,20 @@ for case in cases:
                 plotVSBounds(y,lb,ub,title) 
             ###################################################################
             # Controls
-            '''
-            # Muscle activation derivative at mesh points
-            lb = lBADt.to_numpy().T
-            ub = uBADt.to_numpy().T
-            y = guessADt.to_numpy().T
-            title='Muscle activation derivative at mesh points' 
-            plotVSBounds(y,lb,ub,title) 
-            '''
-            # Actuated joints excitation at mesh points
-            lb = lBActJE.to_numpy().T
-            ub = uBActJE.to_numpy().T
-            y = guessActJE.to_numpy().T
-            title='ActJ excitation at mesh points' 
-            plotVSBounds(y,lb,ub,title) 
+            if actuation == 'muscle-driven':
+                # Muscle activation derivative at mesh points
+                lb = lBADt.to_numpy().T
+                ub = uBADt.to_numpy().T
+                y = guessADt.to_numpy().T
+                title='Muscle activation derivative at mesh points' 
+                plotVSBounds(y,lb,ub,title) 
+            elif actuation == 'torque-driven':
+                # Actuated joints excitation at mesh points
+                lb = lBActJE.to_numpy().T
+                ub = uBActJE.to_numpy().T
+                y = guessActJE.to_numpy().T
+                title='ActJ excitation at mesh points' 
+                plotVSBounds(y,lb,ub,title) 
             if enableGroundThorax:
                 # Ground thorax joints excitation at mesh points
                 lb = lBGTJE.to_numpy().T
@@ -1368,14 +1367,13 @@ for case in cases:
                 plotVSBounds(y,lb,ub,title)               
             ###################################################################
             # Slack controls
-            '''
-            # Muscle force derivative at collocation points
-            lb = lBFDt.to_numpy().T
-            ub = uBFDt.to_numpy().T
-            y = guessFDtCol.to_numpy().T
-            title='Muscle force derivative at collocation points' 
-            plotVSBounds(y,lb,ub,title)
-            '''
+            if actuation == 'muscle-driven':
+                # Muscle force derivative at collocation points
+                lb = lBFDt.to_numpy().T
+                ub = uBFDt.to_numpy().T
+                y = guessFDtCol.to_numpy().T
+                title='Muscle force derivative at collocation points' 
+                plotVSBounds(y,lb,ub,title)
             # Joint velocity derivative (acceleration) at collocation points
             lb = lBQdotdots.to_numpy().T
             ub = uBQdotdots.to_numpy().T
