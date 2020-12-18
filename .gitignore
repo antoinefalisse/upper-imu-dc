@@ -1,5 +1,4 @@
 __pycache__/
 *.log
 
-OpenSim/subject1/MA/ResultsMA
-OpenSim/subject1/MA/MA_Splines
+subject01_MuscleAnalysis*.sto
