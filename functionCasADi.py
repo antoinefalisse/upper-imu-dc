@@ -15,10 +15,6 @@ def pathConstraintsJacobian(nphi, nq):
     
     return f_pathConstraintsJacobian
 
-
-
-
-
 def polynomialApproximation(musclesPolynomials, polynomialData, NPolynomial):    
     
     from polynomials import polynomials
@@ -202,6 +198,14 @@ def passiveTorqueActuatedJointTorque(k, d):
                                      [passiveJointTorque])
     
     return f_passiveMtpTorque  
+
+def dampingTorque(d):
+    Qdot = ca.SX.sym('Qdot', 1)    
+    dampingTorque = - d * Qdot
+    f_dampingTorque = ca.Function('f_dampingTorque', [Qdot], [dampingTorque])
+    
+    return f_dampingTorque  
+    
 
 def mySum(N):
     # Function variables

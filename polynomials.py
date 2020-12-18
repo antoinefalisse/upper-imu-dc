@@ -561,15 +561,9 @@ def getPolynomialCoefficients(pathCoordinates, pathMuscleAnalysis, joints, muscl
         pathMomentArm = pathMuscleAnalysis + 'MomentArm_' + joint + '.sto'
         # getFromStorage outputs time vector as well so [:,1::]
         momentArms[:, :, i] = getFromStorage(pathMomentArm, muscles).to_numpy()[:,1::] 
-    # Detect which muscles actuate which joints (moment arm different than [-0.0001:0.0001]) 
-    
-    momentArms = np.where(np.logical_and(momentArms<=0.005, momentArms>=-0.005), 0, momentArms)
-    
-    
+    # Detect which muscles actuate which joints (moment arm different than [-0.0001:0.0001])     
     spanningInfo = np.sum(momentArms, axis=0)    
     spanningInfo = np.where(np.logical_and(spanningInfo<=0.0001, spanningInfo>=-0.0001), 0, 1)
-    
-    print(spanningInfo)
         
     polynomialData = {}
     

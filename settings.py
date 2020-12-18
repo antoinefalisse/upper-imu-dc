@@ -31,7 +31,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -71,7 +71,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -105,7 +105,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -139,7 +139,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -173,7 +173,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -207,7 +207,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -241,7 +241,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -270,7 +270,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -305,7 +305,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -334,7 +334,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -365,7 +365,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -395,7 +395,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -425,7 +425,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -455,7 +455,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -486,7 +486,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -516,7 +516,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -546,7 +546,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -576,7 +576,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -606,7 +606,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -636,7 +636,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -666,7 +666,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -696,7 +696,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -727,7 +727,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -758,7 +758,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -789,7 +789,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -819,7 +819,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -849,7 +849,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -879,7 +879,7 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
                 'w_gammaTerm': 1,   
@@ -890,8 +890,8 @@ def getSettings():
                 'model': 'weldGT_lockedEP_scaled',
                 'trial': 'FLX01',
                 'tracking_data': 'coordinates',
-                'timeInterval': [0.5, 6.5],                
-                'N': 600,
+                'timeInterval': [1.5, 2],                
+                'N': 50,
                 'filter_coordinates_toTrack': True,
                 'coordinates_toTrack': {
                     'rotational': ['clav_prot', 'clav_elev',
@@ -911,10 +911,12 @@ def getSettings():
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
-                'w_actJETerm': 1,
+                'w_actuationTerm': 1,
                 'w_gtJETerm': 1,
                 'w_lambdaTerm': 1,
-                'w_gammaTerm': 1,   
+                'w_gammaTerm': 1, 
+                'w_activationDt': 1,
+                'w_forceDt': 1, 
                 'w_trackingTerm': 1000
                 }
                 }
