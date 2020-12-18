@@ -332,7 +332,7 @@ class bounds:
                 scalingAcceleration)
     
     def getBoundsActivation(self):
-        lb = [0.05] 
+        lb = [0.01] 
         lb_vec = lb * len(self.muscles)
         ub = [1]
         ub_vec = ub * len(self.muscles)
@@ -343,19 +343,6 @@ class bounds:
         scalingActivation = pd.DataFrame([s_vec], columns=self.muscles)
         upperBoundsActivation = upperBoundsActivation.div(scalingActivation)
         lowerBoundsActivation = lowerBoundsActivation.div(scalingActivation)
-        for count, muscle in enumerate(self.muscles):
-            upperBoundsActivation.insert(count + len(self.muscles), 
-                                         muscle[:-1] + 'l', ub)
-            lowerBoundsActivation.insert(count + len(self.muscles), 
-                                         muscle[:-1] + 'l', lb)  
-
-            # Scaling                       
-            scalingActivation.insert(count + len(self.muscles), 
-                                     muscle[:-1] + 'l', s)  
-            upperBoundsActivation[
-                    muscle[:-1] + 'l'] /= scalingActivation[muscle[:-1] + 'l']
-            lowerBoundsActivation[
-                    muscle[:-1] + 'l'] /= scalingActivation[muscle[:-1] + 'l']
         
         return upperBoundsActivation, lowerBoundsActivation, scalingActivation
     
@@ -371,19 +358,6 @@ class bounds:
         scalingForce = pd.DataFrame([s_vec], columns=self.muscles)
         upperBoundsForce = upperBoundsForce.div(scalingForce)
         lowerBoundsForce = lowerBoundsForce.div(scalingForce)
-        for count, muscle in enumerate(self.muscles):
-            upperBoundsForce.insert(count + len(self.muscles), 
-                                    muscle[:-1] + 'l', ub)
-            lowerBoundsForce.insert(count + len(self.muscles), 
-                                    muscle[:-1] + 'l', lb)  
-
-            # Scaling                       
-            scalingForce.insert(count + len(self.muscles), 
-                                         muscle[:-1] + 'l', s)   
-            upperBoundsForce[
-                    muscle[:-1] + 'l'] /= scalingForce[muscle[:-1] + 'l']
-            lowerBoundsForce[
-                    muscle[:-1] + 'l'] /= scalingForce[muscle[:-1] + 'l']
         
         return upperBoundsForce, lowerBoundsForce, scalingForce
     
@@ -406,19 +380,6 @@ class bounds:
                 scalingActivationDerivative)
         lowerBoundsActivationDerivative = lowerBoundsActivationDerivative.div(
                 scalingActivationDerivative)
-        for count, muscle in enumerate(self.muscles):
-            upperBoundsActivationDerivative.insert(count + len(self.muscles), 
-                                                   muscle[:-1] + 'l', ub)
-            lowerBoundsActivationDerivative.insert(count + len(self.muscles), 
-                                                   muscle[:-1] + 'l', lb) 
-
-            # Scaling                       
-            scalingActivationDerivative.insert(count + len(self.muscles), 
-                                               muscle[:-1] + 'l', s)  
-            upperBoundsActivationDerivative[muscle[:-1] + 'l'] /= (
-                    scalingActivationDerivative[muscle[:-1] + 'l'])
-            lowerBoundsActivationDerivative[muscle[:-1] + 'l'] /= (
-                    scalingActivationDerivative[muscle[:-1] + 'l'])             
         
         return (upperBoundsActivationDerivative, 
                 lowerBoundsActivationDerivative, scalingActivationDerivative)
@@ -440,19 +401,6 @@ class bounds:
                 scalingForceDerivative)
         lowerBoundsForceDerivative = lowerBoundsForceDerivative.div(
                 scalingForceDerivative)
-        for count, muscle in enumerate(self.muscles):
-            upperBoundsForceDerivative.insert(count + len(self.muscles), 
-                                              muscle[:-1] + 'l', ub)
-            lowerBoundsForceDerivative.insert(count + len(self.muscles), 
-                                              muscle[:-1] + 'l', lb)   
-            
-            # Scaling                       
-            scalingForceDerivative.insert(count + len(self.muscles), 
-                                               muscle[:-1] + 'l', s)  
-            upperBoundsForceDerivative[muscle[:-1] + 'l'] /= (
-                    scalingForceDerivative[muscle[:-1] + 'l'])
-            lowerBoundsForceDerivative[muscle[:-1] + 'l'] /= (
-                    scalingForceDerivative[muscle[:-1] + 'l']) 
         
         return (upperBoundsForceDerivative, lowerBoundsForceDerivative, 
                 scalingForceDerivative)

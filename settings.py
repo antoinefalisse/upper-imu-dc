@@ -27,6 +27,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': True,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -66,6 +67,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -99,6 +101,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': False,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -132,6 +135,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': True,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -165,6 +169,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -198,6 +203,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': False,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -231,6 +237,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -259,6 +266,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_6',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -293,6 +301,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -321,6 +330,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_8',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -351,6 +361,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -380,6 +391,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -409,6 +421,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -438,6 +451,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -468,6 +482,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -497,6 +512,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_14',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -526,6 +542,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_14',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -555,6 +572,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_14',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -584,6 +602,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -613,6 +632,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -642,6 +662,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -671,6 +692,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -701,6 +723,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -731,6 +754,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -761,6 +785,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -790,6 +815,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_22',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -819,6 +845,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_22',
+                'actuation': 'torque-driven',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -848,6 +875,39 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_22',
+                'actuation': 'torque-driven',
+                
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actJETerm': 1,
+                'w_gtJETerm': 1,
+                'w_lambdaTerm': 1,
+                'w_gammaTerm': 1,   
+                'w_trackingTerm': 1000
+                },
+            '28': {
+                'subjectID' : '0',
+                'model': 'weldGT_lockedEP_scaled',
+                'trial': 'FLX01',
+                'tracking_data': 'coordinates',
+                'timeInterval': [0.5, 6.5],                
+                'N': 600,
+                'filter_coordinates_toTrack': True,
+                'coordinates_toTrack': {
+                    'rotational': ['clav_prot', 'clav_elev',
+                        'scapula_abduction', 'scapula_elevation',
+                        'scapula_upward_rot', 'scapula_winging',
+                        'plane_elv', 'shoulder_elv', 'axial_rot'],
+                    'translational': []},
+                'guess_zeroVelocity': True,
+                'guess_zeroAcceleration': True,
+                'guessType': "dataDriven",
+                'velocity_correction': True,
+                'constraint_pos': True,
+                'constraint_vel': True,
+                'constraint_acc': False,
+                'actuation': 'muscle-driven',
+                'muscle_approximation': 'multi-dim-poly',
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,

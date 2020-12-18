@@ -11,8 +11,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, True, True, False, False, True, False, False, False]
-run_options = [False, False, False, True, True, False, True, True, True, True]
+run_options = [True, True, True, True, False, False, True, False, False, False]
+# run_options = [False, False, False, True, True, False, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -26,7 +26,7 @@ visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
 # cases = ["26", "26", "27"]
-cases = ["27"]
+cases = ["28"]
 
 
 loadMTParameters = True 
@@ -62,9 +62,13 @@ for case in cases:
     subjectID = settings[case]['subjectID']
     subject = "subject" + subjectID
     model_type = settings[case]['model']
-    enableGroundThorax = True
+    enableGroundThorax = True    
     if model_type == "weldGT_scaled" or model_type == "weldGT_lockedEP_scaled":
         enableGroundThorax = False     
+    if enableGroundThorax:
+        prefixF = "Sh_"
+    else:
+        prefixF = "Sh_GT_" 
     enableElbowProSup = True
     if model_type == "weldGT_lockedEP_scaled":
         enableElbowProSup = False
@@ -84,6 +88,7 @@ for case in cases:
     constraint_pos = settings[case]['constraint_pos']
     constraint_vel = settings[case]['constraint_vel']
     constraint_acc = settings[case]['constraint_acc']
+    actuation = settings[case]['actuation']
     
     norm_std = False
     TrCoordinates_toTrack_Bool = False  
@@ -118,6 +123,11 @@ for case in cases:
             for imu in imus_toTrack:
                 for R_orde in R_order:
                     R_labels.append(imu + "_imu_" + R_orde) 
+                    
+    if actuation == 'muscle-driven':
+        muscle_approximation = settings[case]['muscle_approximation']
+    else:
+        muscle_approximation = 'none'
         
     tgrid = np.linspace(timeInterval[0], timeInterval[1], N+1)
     tgridf = np.zeros((1, N+1))
@@ -273,29 +283,41 @@ for case in cases:
     f_groundThoraxJointsDynamics = torqueMotorDynamics(NGroundThoraxJoints)
     
     # %% Splines
-    splineJoints = ['clav_prot', 'clav_elev', 'scapula_abduction', 
-                    'scapula_elevation', 'scapula_upward_rot', 
-                    'scapula_winging', 'plane_elv', 'shoulder_elv', 
-                    'axial_rot', 'elbow_flexion', 'pro_sup']    
-    if not enableElbowProSup:
-        splineJoints.remove('elbow_flexion')
-        splineJoints.remove('pro_sup') 
-    
-    from splines import getTrainingLMT
-    # Not usable: 6 nodes and 9 dofs results in 10077696 training data and 6
-    # nodes is not enough for accurate approximation.
-    nNodes = 6
-    OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
-    trainingLMT = getTrainingLMT(pathMA, pathMuscleAnalysis, 
-                                 splineJoints, muscles, nNodes, OpenSimDict)
-    from splines import getCoeffs
-    pathLib = "createSpline.dll"
-    splineC = {}
-    for trainingGroup in range(len(trainingLMT)): 
-        splineC[str(trainingGroup)] = getCoeffs(
-            pathLib, trainingLMT[str(trainingGroup)])
-    
-    NVec3 = 3
+    if muscle_approximation == 'splines':
+        splineJoints = ['clav_prot', 'clav_elev', 'scapula_abduction', 
+                        'scapula_elevation', 'scapula_upward_rot', 
+                        'scapula_winging', 'plane_elv', 'shoulder_elv', 
+                        'axial_rot', 'elbow_flexion', 'pro_sup']    
+        if not enableElbowProSup:
+            splineJoints.remove('elbow_flexion')
+            splineJoints.remove('pro_sup') 
+        
+        from splines import getTrainingLMT
+        # Not usable: 6 nodes and 9 dofs results in 10077696 training data and 6
+        # nodes is not enough for accurate approximation.
+        nNodes = 6
+        OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
+        trainingLMT = getTrainingLMT(pathMA, pathMuscleAnalysis, 
+                                     splineJoints, muscles, nNodes, OpenSimDict)
+        from splines import getCoeffs
+        pathLib = "createSpline.dll"
+        splineC = {}
+        for trainingGroup in range(len(trainingLMT)): 
+            splineC[str(trainingGroup)] = getCoeffs(
+                pathLib, trainingLMT[str(trainingGroup)])
+            
+    elif muscle_approximation == 'multi-dim-poly':
+        polynomialJoints = ['clav_prot', 'clav_elev', 'scapula_abduction', 
+                            'scapula_elevation', 'scapula_upward_rot', 
+                            'scapula_winging', 'plane_elv', 'shoulder_elv', 
+                            'axial_rot', 'elbow_flexion', 'pro_sup']    
+        if not enableElbowProSup:
+            polynomialJoints.remove('elbow_flexion')
+            polynomialJoints.remove('pro_sup') 
+        os.chdir(pathExternalFunctions)
+        F_getPolyApp = ca.external('f_getPolyApp', prefixF + subject[0] + 
+                                   subject[-1] + '_getPolyApp.dll')
+        os.chdir(pathMain)        
     
     # %% Polynomials    
     '''
@@ -499,11 +521,7 @@ for case in cases:
     holConstraints_titles = []
     for count in range(NHolConstraints):
         holConstraints_titles.append('hol_constraint_' + str(count))     
-    NVelCorrs = 6 # clavicle and scapula mobilities
-    if enableGroundThorax:
-        prefixF = "Sh_"
-    else:
-        prefixF = "Sh_GT_"    
+    NVelCorrs = 6 # clavicle and scapula mobilities       
     os.chdir(pathExternalFunctions)
     if tracking_data == "markers":
         print("Not supported") 
@@ -759,19 +777,28 @@ for case in cases:
         
     # %% Bounds
     from bounds import bounds
-    bounds = bounds(joints, rotationalJoints)    
+    bounds = bounds(joints, rotationalJoints, muscles=muscles)   
+    ###########################################################################
     # States
-    # uBA, lBA, scalingA = bounds.getBoundsActivation()
-    # uBAk = ca.vec(uBA.to_numpy().T * np.ones((1, N+1))).full()
-    # lBAk = ca.vec(lBA.to_numpy().T * np.ones((1, N+1))).full()
-    # uBAj = ca.vec(uBA.to_numpy().T * np.ones((1, d*N))).full()
-    # lBAj = ca.vec(lBA.to_numpy().T * np.ones((1, d*N))).full()
-    
-    # uBF, lBF, scalingF = bounds.getBoundsForce()
-    # uBFk = ca.vec(uBF.to_numpy().T * np.ones((1, N+1))).full()
-    # lBFk = ca.vec(lBF.to_numpy().T * np.ones((1, N+1))).full()
-    # uBFj = ca.vec(uBF.to_numpy().T * np.ones((1, d*N))).full()
-    # lBFj = ca.vec(lBF.to_numpy().T * np.ones((1, d*N))).full()
+    if actuation == 'muscle-driven':    
+        uBA, lBA, scalingA = bounds.getBoundsActivation()
+        uBAk = ca.vec(uBA.to_numpy().T * np.ones((1, N+1))).full()
+        lBAk = ca.vec(lBA.to_numpy().T * np.ones((1, N+1))).full()
+        uBAj = ca.vec(uBA.to_numpy().T * np.ones((1, d*N))).full()
+        lBAj = ca.vec(lBA.to_numpy().T * np.ones((1, d*N))).full()
+        
+        uBF, lBF, scalingF = bounds.getBoundsForce()
+        uBFk = ca.vec(uBF.to_numpy().T * np.ones((1, N+1))).full()
+        lBFk = ca.vec(lBF.to_numpy().T * np.ones((1, N+1))).full()
+        uBFj = ca.vec(uBF.to_numpy().T * np.ones((1, d*N))).full()
+        lBFj = ca.vec(lBF.to_numpy().T * np.ones((1, d*N))).full()
+    elif actuation == 'torque-driven':        
+        uBActJA, lBActJA, scalingActJA = bounds.getBoundsTMActivation(
+            actJoints)
+        uBActJAk = ca.vec(uBActJA.to_numpy().T * np.ones((1, N+1))).full()
+        lBActJAk = ca.vec(lBActJA.to_numpy().T * np.ones((1, N+1))).full()
+        uBActJAj = ca.vec(uBActJA.to_numpy().T * np.ones((1, d*N))).full()
+        lBActJAj = ca.vec(lBActJA.to_numpy().T * np.ones((1, d*N))).full()
     
     # if conservative_bounds:
     #     uBQs, lBQs, scalingQs, _, _ = (
@@ -789,12 +816,6 @@ for case in cases:
     lBQdotsk = ca.vec(lBQdots.to_numpy().T*np.ones((1, N+1))).full()
     uBQdotsj = ca.vec(uBQdots.to_numpy().T*np.ones((1, d*N))).full()
     lBQdotsj = ca.vec(lBQdots.to_numpy().T*np.ones((1, d*N))).full()
-        
-    uBActJA, lBActJA, scalingActJA = bounds.getBoundsTMActivation(actJoints)
-    uBActJAk = ca.vec(uBActJA.to_numpy().T * np.ones((1, N+1))).full()
-    lBActJAk = ca.vec(lBActJA.to_numpy().T * np.ones((1, N+1))).full()
-    uBActJAj = ca.vec(uBActJA.to_numpy().T * np.ones((1, d*N))).full()
-    lBActJAj = ca.vec(lBActJA.to_numpy().T * np.ones((1, d*N))).full()
     
     if enableGroundThorax:
         uBGTJA, lBGTJA, scalingGTJA = bounds.getBoundsTMActivation(
@@ -803,22 +824,24 @@ for case in cases:
         lBGTJAk = ca.vec(lBGTJA.to_numpy().T * np.ones((1, N+1))).full()
         uBGTJAj = ca.vec(uBGTJA.to_numpy().T * np.ones((1, d*N))).full()
         lBGTJAj = ca.vec(lBGTJA.to_numpy().T * np.ones((1, d*N))).full()
-    
-    # Controls
-    # uBADt, lBADt, scalingADt = bounds.getBoundsActivationDerivative()
-    # uBADtk = ca.vec(uBADt.to_numpy().T * np.ones((1, N))).full()
-    # lBADtk = ca.vec(lBADt.to_numpy().T * np.ones((1, N))).full()
-    
-    uBActJE, lBActJE, scalingActJE = bounds.getBoundsTMExcitation(actJoints)
-    uBActJEk = ca.vec(uBActJE.to_numpy().T * np.ones((1, N))).full()
-    lBActJEk = ca.vec(lBActJE.to_numpy().T * np.ones((1, N))).full()
+    ###########################################################################
+    # Controls    
+    if actuation == 'muscle-driven':
+        uBADt, lBADt, scalingADt = bounds.getBoundsActivationDerivative()
+        uBADtk = ca.vec(uBADt.to_numpy().T * np.ones((1, N))).full()
+        lBADtk = ca.vec(lBADt.to_numpy().T * np.ones((1, N))).full()
+    elif actuation == 'torque-driven':    
+        uBActJE, lBActJE, scalingActJE = bounds.getBoundsTMExcitation(
+            actJoints)
+        uBActJEk = ca.vec(uBActJE.to_numpy().T * np.ones((1, N))).full()
+        lBActJEk = ca.vec(lBActJE.to_numpy().T * np.ones((1, N))).full()
     
     if enableGroundThorax:
         uBGTJE, lBGTJE, scalingGTJE = bounds.getBoundsTMExcitation(
             groundThoraxJoints)
         uBGTJEk = ca.vec(uBGTJE.to_numpy().T * np.ones((1, N))).full()
         lBGTJEk = ca.vec(lBGTJE.to_numpy().T * np.ones((1, N))).full()
-    
+    ###########################################################################
     # Slack controls
     uBQdotdots, lBQdotdots, scalingQdotdots = bounds.getBoundsAcceleration()
     uBQdotdotsj = ca.vec(uBQdotdots.to_numpy().T * np.ones((1, d*N))).full()
@@ -852,10 +875,10 @@ for case in cases:
                 imuData_toTrack)
             uBXYZk = ca.vec(uBXYZ.to_numpy().T * np.ones((1, N))).full()
             lBXYZk = ca.vec(lBXYZ.to_numpy().T * np.ones((1, N))).full()
-    
-    # uBFDt, lBFDt, scalingFDt = bounds.getBoundsForceDerivative()
-    # uBFDtj = ca.vec(uBFDt.to_numpy().T * np.ones((1, d*N))).full()
-    # lBFDtj = ca.vec(lBFDt.to_numpy().T * np.ones((1, d*N))).full()
+    if actuation == 'muscle-driven':
+        uBFDt, lBFDt, scalingFDt = bounds.getBoundsForceDerivative()
+        uBFDtj = ca.vec(uBFDt.to_numpy().T * np.ones((1, d*N))).full()
+        lBFDtj = ca.vec(lBFDt.to_numpy().T * np.ones((1, d*N))).full()
     
 #     if tracking_data == "markers":
 #         # Additional controls
@@ -892,7 +915,7 @@ for case in cases:
     if guessType == "dataDriven":         
         from guess import dataDrivenGuess
         guess = dataDrivenGuess(Qs_fromIK_filt_interp, N, d, joints, 
-                                holConstraints_titles)    
+                                holConstraints_titles, muscles=muscles)    
     # elif guessType == "quasiRandom": 
     #     from guesses import quasiRandomGuess
     #     guess = quasiRandomGuess(N, d, joints, bothSidesMuscles, timeElapsed,
@@ -900,25 +923,32 @@ for case in cases:
     # if offset_ty:
     #     # Static parameters
     #     guessOffset = guess.getGuessOffset(scalingOffset)
+    ###########################################################################
     # States
-    # guessA = guess.getGuessActivation(scalingA)
-    # guessACol = guess.getGuessActivationCol()
-    # guessF = guess.getGuessForce(scalingF)
-    # guessFCol = guess.getGuessForceCol()
+    if actuation == 'muscle-driven':
+        guessA = guess.getGuessActivation(scalingA)
+        guessACol = guess.getGuessActivationCol()
+        guessF = guess.getGuessForce(scalingF)
+        guessFCol = guess.getGuessForceCol()
+    elif actuation == 'torque-driven':
+        guessActJA = guess.getGuessTMActivation(actJoints)
+        guessActJACol = guess.getGuessTMActivationCol()
     guessQs = guess.getGuessPosition(scalingQs)
     guessQsCol = guess.getGuessPositionCol()
     guessQdots = guess.getGuessVelocity(scalingQdots, guess_zeroVelocity)
-    guessQdotsCol = guess.getGuessVelocityCol()    
-    guessActJA = guess.getGuessTMActivation(actJoints)
-    guessActJACol = guess.getGuessTMActivationCol()
+    guessQdotsCol = guess.getGuessVelocityCol()        
     if enableGroundThorax:
         guessGTJA = guess.getGuessTMActivation(groundThoraxJoints)
         guessGTJACol = guess.getGuessTMActivationCol()
+    ###########################################################################
     # Controls
-    # guessADt = guess.getGuessActivationDerivative(scalingADt)
-    guessActJE = guess.getGuessTMExcitation(actJoints)
+    if actuation == 'muscle-driven':
+        guessADt = guess.getGuessActivationDerivative(scalingADt)
+    elif actuation == 'torque-driven':
+        guessActJE = guess.getGuessTMExcitation(actJoints)
     if enableGroundThorax:
         guessGTJE = guess.getGuessTMExcitation(groundThoraxJoints)
+    ###########################################################################
     # Slack controls
     guessQdotdots = guess.getGuessAcceleration(scalingQdotdots, 
                                                guess_zeroAcceleration)
@@ -936,10 +966,9 @@ for case in cases:
         if track_orientations:
             guessXYZ = guess.getGuessIMU(imuData_toTrack, XYZ_data_interp,
                                          scalingXYZ)
-            
-        
-    # guessFDt = guess.getGuessForceDerivative(scalingFDt)
-    # guessFDtCol = guess.getGuessForceDerivativeCol()  
+    if actuation == 'muscle-driven':
+        guessFDt = guess.getGuessForceDerivative(scalingFDt)
+        guessFDtCol = guess.getGuessForceDerivativeCol()  
     
     # if tracking_data == "markers":
     #     guessMarker = guess.getGuessMarker(
