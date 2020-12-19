@@ -11,8 +11,10 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, True, True, False, False, True, False, False, False]
+# run_options = [True, True, True, True, False, False, True, False, False, False]
 # run_options = [False, False, True, True, True, False, True, True, True, True]
+run_options = [False, False, False, False, False, False, True, False, False, False]
+
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -28,7 +30,7 @@ saveTrajectories = run_options[9]
 # cases = ["26", "26", "27"]
 cases = ["28"]
 
-
+runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
@@ -142,8 +144,9 @@ for case in cases:
     pathOpenSimModel = os.path.join(pathModels, model + ".osim")   
     pathMA = os.path.join(pathSubject, 'MA')
     pathDummyMotion = os.path.join(pathMA, 'train_motion.mot')
-    pathMuscleAnalysis = os.path.join(pathSubject, 'MA', 'ResultsMA', model + 
-                                      "_train", 'subject01_MuscleAnalysis_')
+    pathMA = os.path.join(pathSubject, 'MA')
+    pathMATrainingMotion = os.path.join(pathMA, 'ResultsMA', model + 
+                                        "_train", 'subject01_MuscleAnalysis_')
     pathTRC = os.path.join(pathSubject, 'TRC', trial + ".trc")
     pathExternalFunctions = os.path.join(pathMain, 'ExternalFunctions')
     pathIKFolder = os.path.join(pathSubject, 'IK', model)
@@ -295,12 +298,13 @@ for case in cases:
             splineJoints.remove('pro_sup') 
         
         from splines import getTrainingLMT
-        # Not usable: 6 nodes and 9 dofs results in 10077696 training data and 6
-        # nodes is not enough for accurate approximation.
-        nNodes = 6
+        # Not usable: 6 nodes and 9 dofs results in 10077696 training data and
+        # 6 nodes is not enough for accurate approximation with splines.
+        nNodes = 3
         OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
-        trainingLMT = getTrainingLMT(pathMA, pathMuscleAnalysis, 
-                                     splineJoints, muscles, nNodes, OpenSimDict)
+        trainingLMT = getTrainingLMT(pathMA, pathMATrainingMotion, 
+                                     splineJoints, muscles, nNodes,
+                                     OpenSimDict)
         from splines import getCoeffs
         pathLib = "createSpline.dll"
         splineC = {}
@@ -325,8 +329,9 @@ for case in cases:
         
         # Spanning info        
         from muscleData import getSpanningInfo           
-        idxSpanningJoints = getSpanningInfo(pathDummyMotion, pathMuscleAnalysis,
-                                       polynomialJoints, muscles)        
+        idxSpanningJoints = getSpanningInfo(pathDummyMotion, 
+                                            pathMATrainingMotion,
+                                            polynomialJoints, muscles)        
     
     # %% Damping torques
     from functionCasADi import dampingTorque
@@ -798,6 +803,33 @@ for case in cases:
 #         uBOffset, lBOffset = bounds.getBoundsOffset(scalingOffset)
 #         uBOffsetk = uBOffset.to_numpy()
 #         lBOffsetk = lBOffset.to_numpy()
+
+    # %% Generate training data for polynomial approximation.
+    # THIS MAKES NO SENSE: poses are completely unphysiological - MA fails.
+    if (runTrainingDataPolyApp and actuation == 'muscle-driven' and 
+        muscle_approximation == 'multi-dim-poly'):
+        # This comes here, because it relies on the bounds to create a 
+        # uniform grid of training poses. TODO not all poses are physiological.        
+        uBQs_nsc = uBQs.mul(scalingQs,axis='columns')
+        lBQs_nsc = lBQs.mul(scalingQs,axis='columns')    
+        from getTrainingDataPolyApp import getInputsMA    
+        # number of smapling point between (including) upper and lower bounds).
+        # The number of samples = nNodes^nDim where nDim=NPolynomialJoints
+        nNodes = 3 
+        OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
+        inputs_MA = getInputsMA(pathMA, uBQs_nsc, lBQs_nsc, polynomialJoints,
+                                nNodes, OpenSimDict)
+        # run MA in parallel
+        from getTrainingDataPolyApp import MA_parallel
+        from joblib import Parallel, delayed  
+        useMultiProcessing = True
+        if __name__ == "__main__":
+            if useMultiProcessing:
+                Njobs = NThreads
+            else:
+                Njobs = 1
+            Parallel(n_jobs=Njobs)(delayed(MA_parallel)(inputs_MA[i]) 
+                                   for i in inputs_MA) 
     
     # %% Guesses and scaling   
     Qs_fromIK_filt_interp = interpolateDataFrame(
@@ -3116,7 +3148,7 @@ for case in cases:
     
  #    from muscleData import getPolynomialData      
  #    polynomialData = getPolynomialData(loadPolynomialData, pathModels, model,
- #                                       pathDummyMotion, pathMuscleAnalysis,
+ #                                       pathDummyMotion, pathMATrainingMotion,
  #                                       polynomialJoints, muscles)        
  #    if loadPolynomialData:
  #        polynomialData = polynomialData.item()
@@ -3142,7 +3174,7 @@ for case in cases:
  #    # Test polynomials
  #    if plotPolynomials:
  #        from polynomials import testPolynomials
- #        momentArms = testPolynomials(pathDummyMotion, pathMuscleAnalysis, 
+ #        momentArms = testPolynomials(pathDummyMotion, pathMATrainingMotion, 
  #                                      rightPolynomialJoints, muscles, 
  #                                      f_polynomial, polynomialData, 
  #                                      momentArmIndices,
