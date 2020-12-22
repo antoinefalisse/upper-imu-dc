@@ -26,8 +26,8 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-# cases = ["26", "26", "27"]
-cases = ["22"]
+cases = ["32", "33", "34", "35"]
+cases = ["36", "37", "38", "39"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
@@ -1438,6 +1438,8 @@ for case in cases:
             # States
             if actuation == 'muscle-driven':
                 normFkj_nsc = normFkj * (scalingF.to_numpy().T * np.ones((1, d+1)))
+            elif actuation == 'torque-driven':
+                aActJkj_nsc = aActJkj * (scalingActJA.to_numpy().T * np.ones((1, d+1)))
             Qskj_nsc = Qskj * (scalingQs.to_numpy().T * np.ones((1, d+1)))
             Qdotskj_nsc = Qdotskj * (scalingQdots.to_numpy().T * np.ones((1, d+1)))
             # Controls
@@ -1568,7 +1570,18 @@ for case in cases:
             Qdotsp_nsc = ca.mtimes(Qdotskj_nsc, C[j+1])                 
             if enableGroundThorax:
                 aGTJp = ca.mtimes(aGTJkj, C[j+1])
-            # Append collocation equations
+            # Append collocation equations            
+            # Skeleton dynamics (implicit formulation) 
+            # Position derivatives
+            if velocity_correction:
+                g_eq.append((h*(Qdotskj_nsc[:, j+1] + qdotCorr_allj) - 
+                             Qsp_nsc) / scalingQs.to_numpy().T)
+            else:
+                g_eq.append((h*(Qdotskj_nsc[:, j+1]) - 
+                             Qsp_nsc) / scalingQs.to_numpy().T)
+            # Velocity derivatives
+            g_eq.append((h*Qdotdotsj_nsc[:, j] - Qdotsp_nsc) / 
+                             scalingQdots.to_numpy().T)            
             # Actuation dynamics
             if actuation == 'muscle-driven':
                 # Muscle activation dynamics (implicit formulation)
@@ -1584,17 +1597,6 @@ for case in cases:
                 # Ground thorax joints dynamics (explicit formulation) 
                 aGTJDtj = f_groundThoraxJointsDynamics(eGTJk, aGTJkj[:, j+1])
                 g_eq.append(h*aGTJDtj - aGTJp)
-            # Skeleton dynamics (implicit formulation) 
-            # Position derivatives
-            if velocity_correction:
-                g_eq.append((h*(Qdotskj_nsc[:, j+1] + qdotCorr_allj) - 
-                             Qsp_nsc) / scalingQs.to_numpy().T)
-            else:
-                g_eq.append((h*(Qdotskj_nsc[:, j+1]) - 
-                             Qsp_nsc) / scalingQs.to_numpy().T)
-            # Velocity derivatives
-            g_eq.append((h*Qdotdotsj_nsc[:, j] - Qdotsp_nsc) / 
-                             scalingQdots.to_numpy().T)
             
             ###################################################################
             # Path constraints        
@@ -1636,9 +1638,15 @@ for case in cases:
                 # Starting from "clav_prot", which is in "all" cases the first
                 # coordinates after the root coordinates. TODO
                 for c, joint in enumerate(joints[joints.index("clav_prot"):]):
+                    # Damping torque
+                    dampingTorquej = f_dampingTorque(
+                        Qdotskj_nsc[joints.index(joint), j+1])
+                    # diffTj = f_diffTorques(
+                    #     Tj[joints.index(joint)] / scalingActJA.iloc[0][joint],
+                    #     aActJkj[c, j+1], 0)
                     diffTj = f_diffTorques(
-                        Tj[joints.index(joint)] / scalingActJE.iloc[0][joint],
-                        aActJkj[c, j+1], 0)
+                        Tj[joints.index(joint)],
+                        aActJkj_nsc[c, j+1], dampingTorquej)
                     g_eq.append(diffTj)                
             if enableGroundThorax:
                 # Actuate ground thorax joints with ideal motor torques.
@@ -1876,17 +1884,17 @@ for case in cases:
             Qskj2 = (ca.horzcat(Qs[:, k], Qs_c[:, k*d:(k+1)*d]))
             Qdotskj2 = (ca.horzcat(Qdots[:, k], Qdots_c[:, k*d:(k+1)*d]))            
             if enableGroundThorax:
-                aGTJkj2 = (ca.horzcat(aGTJ[:, k], aGTJ_c[:, k*d:(k+1)*d]))
-            
+                aGTJkj2 = (ca.horzcat(aGTJ[:, k], aGTJ_c[:, k*d:(k+1)*d]))            
+              
+            opti.subject_to(Qs[:, k+1] == ca.mtimes(Qskj2, D))
+            opti.subject_to(Qdots[:, k+1] == ca.mtimes(Qdotskj2, D))
+            if enableGroundThorax:
+                opti.subject_to(aGTJ[:, k+1] == ca.mtimes(aGTJkj2, D))                
             if actuation == 'muscle-driven':
                 opti.subject_to(a[:, k+1] == ca.mtimes(akj2, D))
                 opti.subject_to(normF[:, k+1] == ca.mtimes(normFkj2, D))  
             elif actuation == 'torque-driven':
-                opti.subject_to(aActJ[:, k+1] == ca.mtimes(aActJkj2, D))    
-            opti.subject_to(Qs[:, k+1] == ca.mtimes(Qskj2, D))
-            opti.subject_to(Qdots[:, k+1] == ca.mtimes(Qdotskj2, D))
-            if enableGroundThorax:
-                opti.subject_to(aGTJ[:, k+1] == ca.mtimes(aGTJkj2, D))
+                opti.subject_to(aActJ[:, k+1] == ca.mtimes(aActJkj2, D))  
             
         #######################################################################
         # Add tracking terms, only at the mesh points.  

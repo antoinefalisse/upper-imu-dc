@@ -1,6 +1,5 @@
 import org.opensim.modeling.*;
-taskNames={'abd01';'abd02';'abd03';'flx02';'flx03';'shrug01';'shrug02';'shrug03';...
-    'abd21';'abd22';'abd23';'flx21';'flx22';'flx23';'shrug21';'shrug22';'shrug23'};
+taskNames={'abd01';'abd02';'abd03';'flx01';'flx02';'flx03';'shrug01';'shrug02';'shrug03'};
 % taskNames={'abd01';'abd02';'abd03';'flx01';'flx02';'flx03';'shrug01';'shrug02';'shrug03';...
 %     'abd21';'abd22';'abd23';'flx21';'flx22';'flx23';'shrug21';'shrug22';'shrug23'};
 % taskNames={'flx01'};
@@ -16,7 +15,7 @@ for i=1:length(taskNames)
     ikTool.setStartTime(0);
     ikTool.setEndTime(15);
     path_setup = ['.\Setup_IK_', taskNames{i}, '.xml'];
-%     ikTool.print(path_setup);
-%     Command = ['opensim-cmd' ' run-tool ' path_setup];
-%     system(Command);
+    ikTool.print(path_setup);
+    Command = ['opensim-cmd' ' run-tool ' path_setup];
+    system(Command);
 end   
