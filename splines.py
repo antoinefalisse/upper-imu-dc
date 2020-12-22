@@ -19,7 +19,7 @@ def getTrainingLMT(pathMA, pathMuscleAnalysis, joints, muscles, nNodes,
     nMuscles = len(muscles)
 
     from variousFunctions import getIK
-    pathDummyMotion = os.path.join(pathMA, 'dummy_motion.mot')
+    pathDummyMotion = os.path.join(pathMA, 'train_motion.mot')
     jointCoordinates = (getIK(pathDummyMotion, joints)[0]).to_numpy()[:,1::] 
     
     # Get moment arms

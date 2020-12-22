@@ -12,7 +12,7 @@ import copy
 
 # User settings
 # run_options = [True, True, True, True, False, False, True, False, False, False]
-run_options = [False, False, False, True, True, False, True, True, True, True]
+run_options = [False, False, True, True, True, False, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -26,7 +26,7 @@ visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
 # cases = ["26", "26", "27"]
-cases = ["27"]
+cases = ["22"]
 
 
 loadMTParameters = True 
@@ -129,9 +129,9 @@ for case in cases:
     pathModels = os.path.join(pathSubject, 'Models')
     pathOpenSimModel = os.path.join(pathModels, model + ".osim")   
     pathMA = os.path.join(pathSubject, 'MA')
-    pathDummyMotion = os.path.join(pathMA, 'dummy_motion.mot')
-    pathMuscleAnalysis = os.path.join(pathSubject, 'MA', 'ResultsMA', model,
-                                      'subject01_MuscleAnalysis_')
+    pathDummyMotion = os.path.join(pathMA, 'train_motion.mot')
+    pathMuscleAnalysis = os.path.join(pathSubject, 'MA', 'ResultsMA', model + 
+                                      "_train", 'subject01_MuscleAnalysis_')
     pathTRC = os.path.join(pathSubject, 'TRC', trial + ".trc")
     pathExternalFunctions = os.path.join(pathMain, 'ExternalFunctions')
     pathIKFolder = os.path.join(pathSubject, 'IK', model)
@@ -272,30 +272,28 @@ for case in cases:
     f_actJointsDynamics = torqueMotorDynamics(NActJoints)
     f_groundThoraxJointsDynamics = torqueMotorDynamics(NGroundThoraxJoints)
     
-    # %% Splines
-    splineJoints = ['clav_prot', 'clav_elev', 'scapula_abduction', 
-                    'scapula_elevation', 'scapula_upward_rot', 
-                    'scapula_winging', 'plane_elv', 'shoulder_elv', 
-                    'axial_rot', 'elbow_flexion', 'pro_sup']    
-    if not enableElbowProSup:
-        splineJoints.remove('elbow_flexion')
-        splineJoints.remove('pro_sup') 
+    # # %% Splines
+    # splineJoints = ['clav_prot', 'clav_elev', 'scapula_abduction', 
+    #                 'scapula_elevation', 'scapula_upward_rot', 
+    #                 'scapula_winging', 'plane_elv', 'shoulder_elv', 
+    #                 'axial_rot', 'elbow_flexion', 'pro_sup']    
+    # if not enableElbowProSup:
+    #     splineJoints.remove('elbow_flexion')
+    #     splineJoints.remove('pro_sup') 
     
-    from splines import getTrainingLMT
-    # Not usable: 6 nodes and 9 dofs results in 10077696 training data and 6
-    # nodes is not enough for accurate approximation.
-    nNodes = 6
-    OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
-    trainingLMT = getTrainingLMT(pathMA, pathMuscleAnalysis, 
-                                 splineJoints, muscles, nNodes, OpenSimDict)
-    from splines import getCoeffs
-    pathLib = "createSpline.dll"
-    splineC = {}
-    for trainingGroup in range(len(trainingLMT)): 
-        splineC[str(trainingGroup)] = getCoeffs(
-            pathLib, trainingLMT[str(trainingGroup)])
-    
-    NVec3 = 3
+    # from splines import getTrainingLMT
+    # # Not usable: 6 nodes and 9 dofs results in 10077696 training data and 6
+    # # nodes is not enough for accurate approximation.
+    # nNodes = 6
+    # OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
+    # trainingLMT = getTrainingLMT(pathMA, pathMuscleAnalysis, 
+    #                              splineJoints, muscles, nNodes, OpenSimDict)
+    # from splines import getCoeffs
+    # pathLib = "createSpline.dll"
+    # splineC = {}
+    # for trainingGroup in range(len(trainingLMT)): 
+    #     splineC[str(trainingGroup)] = getCoeffs(
+    #         pathLib, trainingLMT[str(trainingGroup)])
     
     # %% Polynomials    
     '''
