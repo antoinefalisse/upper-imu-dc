@@ -1,10 +1,7 @@
-from sys import path
 import os
 if os.environ['COMPUTERNAME'] == 'GBW-L-W2003':
-    path.append(r"C:/Users/u0101727/Documents/Software/CasADi/casadi-windows-py37-v3.5.5-64bit")
     pathOS = "C:/Users/u0101727/Documents/MyRepositories/opensim-fork/install_ks/sdk/Python"
 elif os.environ['COMPUTERNAME'] == 'GBW-D-W2711':
-    path.append(r"C:/Users/Public/Documents/Software/casadi-windows-py37-v3.5.1-64bit")
     pathOS = "C:/OpenSim_4.1/sdk/Python"
 import casadi as ca
 import numpy as np
@@ -26,8 +23,7 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-# cases = ["32", "33", "34", "35"]
-cases = ["36", "37", "38", "39"]
+cases = ["41"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
@@ -2968,9 +2964,8 @@ for case in cases:
                 handles, labels = ax.get_legend_handles_labels()
                 plt.legend(handles, labels, loc='upper right')            
             
-            ncol = 6 
-            nrow = np.ceil(NJoints/ncol)           
-            fig, axs = plt.subplots(int(nrow), ncol, sharex=True)  
+            ny = np.ceil(np.sqrt(NJoints))             
+            fig, axs = plt.subplots(int(ny), int(ny), sharex=True)  
             fig.suptitle('Joint torques')     
             for i, ax in enumerate(axs.flat):
                 if i < NJoints:
