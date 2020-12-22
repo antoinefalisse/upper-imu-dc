@@ -26,7 +26,7 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["32", "33", "34", "35"]
+# cases = ["32", "33", "34", "35"]
 cases = ["36", "37", "38", "39"]
 
 runTrainingDataPolyApp = False
