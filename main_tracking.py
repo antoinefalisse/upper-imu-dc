@@ -23,7 +23,7 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["41"]
+cases = ["42"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
@@ -2787,32 +2787,44 @@ for case in cases:
         if visualizeResultsAgainstBounds:
             from variousFunctions import plotVSBounds
             # States
-            '''
-            # Muscle activation at mesh points            
-            lb = lBA.to_numpy().T
-            ub = uBA.to_numpy().T
-            y = a_opt
-            title='Muscle activation at mesh points'            
-            plotVSBounds(y,lb,ub,title)  
-            # Muscle activation at collocation points
-            lb = lBA.to_numpy().T
-            ub = uBA.to_numpy().T
-            y = a_c_opt
-            title='Muscle activation at collocation points' 
-            plotVSBounds(y,lb,ub,title)  
-            # Muscle force at mesh points
-            lb = lBF.to_numpy().T
-            ub = uBF.to_numpy().T
-            y = normF_opt
-            title='Muscle force at mesh points' 
-            plotVSBounds(y,lb,ub,title)  
-            # Muscle force at collocation points
-            lb = lBF.to_numpy().T
-            ub = uBF.to_numpy().T
-            y = normF_c_opt
-            title='Muscle force at collocation points' 
-            plotVSBounds(y,lb,ub,title)
-            '''
+            if actuation == 'muscle-driven':
+                # Muscle activation at mesh points            
+                lb = lBA.to_numpy().T
+                ub = uBA.to_numpy().T
+                y = a_opt
+                title='Muscle activation at mesh points'            
+                plotVSBounds(y,lb,ub,title)  
+                # Muscle activation at collocation points
+                lb = lBA.to_numpy().T
+                ub = uBA.to_numpy().T
+                y = a_c_opt
+                title='Muscle activation at collocation points' 
+                plotVSBounds(y,lb,ub,title)  
+                # Muscle force at mesh points
+                lb = lBF.to_numpy().T
+                ub = uBF.to_numpy().T
+                y = normF_opt
+                title='Muscle force at mesh points' 
+                plotVSBounds(y,lb,ub,title)  
+                # Muscle force at collocation points
+                lb = lBF.to_numpy().T
+                ub = uBF.to_numpy().T
+                y = normF_c_opt
+                title='Muscle force at collocation points' 
+                plotVSBounds(y,lb,ub,title)
+            elif actuation == 'torque-driven':
+                # Actuated joints activation at mesh points
+                lb = lBActJA.to_numpy().T
+                ub = uBActJA.to_numpy().T
+                y = aActJ_opt
+                title='ActJ activation at mesh points' 
+                plotVSBounds(y,lb,ub,title) 
+                # Actuated joints activation at collocation points
+                lb = lBActJA.to_numpy().T
+                ub = uBActJA.to_numpy().T
+                y = aActJ_c_opt
+                title='ActJ activation at collocation points' 
+                plotVSBounds(y,lb,ub,title)            
             # Joint position at mesh points
             lb = lBQs.to_numpy().T
             ub = uBQs.to_numpy().T
@@ -2836,19 +2848,7 @@ for case in cases:
             ub = uBQdots.to_numpy().T
             y = Qdots_c_opt
             title='Joint velocity at collocation points' 
-            plotVSBounds(y,lb,ub,title) 
-            # Actuated joints activation at mesh points
-            lb = lBActJA.to_numpy().T
-            ub = uBActJA.to_numpy().T
-            y = aActJ_opt
-            title='ActJ activation at mesh points' 
-            plotVSBounds(y,lb,ub,title) 
-            # Actuated joints activation at collocation points
-            lb = lBActJA.to_numpy().T
-            ub = uBActJA.to_numpy().T
-            y = aActJ_c_opt
-            title='ActJ activation at collocation points' 
-            plotVSBounds(y,lb,ub,title)
+            plotVSBounds(y,lb,ub,title)             
             if enableGroundThorax:
                 # Ground thorax joints activation at mesh points
                 lb = lBGTJA.to_numpy().T
@@ -2864,20 +2864,20 @@ for case in cases:
                 plotVSBounds(y,lb,ub,title) 
             #######################################################################
             # Controls
-            '''
-            # Muscle activation derivative at mesh points
-            lb = lBADt.to_numpy().T
-            ub = uBADt.to_numpy().T
-            y = aDt_opt
-            title='Muscle activation derivative at mesh points' 
-            plotVSBounds(y,lb,ub,title) 
-            '''
-            # Actuated joints excitation at mesh points
-            lb = lBActJE.to_numpy().T
-            ub = uBActJE.to_numpy().T
-            y = eActJ_opt
-            title='ActJ excitation at mesh points' 
-            plotVSBounds(y,lb,ub,title) 
+            if actuation == 'muscle-driven':
+                # Muscle activation derivative at mesh points
+                lb = lBADt.to_numpy().T
+                ub = uBADt.to_numpy().T
+                y = aDt_opt
+                title='Muscle activation derivative at mesh points' 
+                plotVSBounds(y,lb,ub,title) 
+            elif actuation == 'torque-driven':
+                # Actuated joints excitation at mesh points
+                lb = lBActJE.to_numpy().T
+                ub = uBActJE.to_numpy().T
+                y = eActJ_opt
+                title='ActJ excitation at mesh points' 
+                plotVSBounds(y,lb,ub,title) 
             if enableGroundThorax:
                 # Ground thorax joints excitation at mesh points
                 lb = lBGTJE.to_numpy().T
@@ -2887,14 +2887,13 @@ for case in cases:
                 plotVSBounds(y,lb,ub,title)                 
             #######################################################################
             # Slack controls
-            '''
-            # Muscle force derivative at collocation points
-            lb = lBFDt.to_numpy().T
-            ub = uBFDt.to_numpy().T
-            y = normFDt_c_opt
-            title='Muscle force derivative at collocation points' 
-            plotVSBounds(y,lb,ub,title)
-            '''
+            if actuation == 'muscle-driven':
+                # Muscle force derivative at collocation points
+                lb = lBFDt.to_numpy().T
+                ub = uBFDt.to_numpy().T
+                y = normFDt_c_opt
+                title='Muscle force derivative at collocation points' 
+                plotVSBounds(y,lb,ub,title)            
             # Joint velocity derivative (acceleration) at collocation points
             lb = lBQdotdots.to_numpy().T
             ub = uBQdotdots.to_numpy().T
