@@ -11,8 +11,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, True, True, False, False, True, False, False, False]
-run_options = [False, False, True, True, True, True, True, True, True, True]
+run_options = [True, True, True, True, False, False, True, False, False, False]
+# run_options = [False, False, True, True, True, True, True, True, True, True]
 
 
 solveProblem = run_options[0]
@@ -1509,12 +1509,12 @@ for case in cases:
                            weights['gtJETerm'] * gtJETerm + 
                            weights['jointAccTerm'] * jointAccTerm +                
                            weights['lambdaTerm'] * lambdaTerm + 
-                           weights['gammaTerm'] * gammaTerm) * h * B[j + 1])
+                           weights['gammaTerm'] * gammaTerm))
                 else:
                     Jj = ((weights['actuationTerm'] * actuationTerm + 
                            weights['gtJETerm'] * gtJETerm +
                            weights['jointAccTerm'] * jointAccTerm +                
-                           weights['lambdaTerm'] * lambdaTerm) * h * B[j + 1])
+                           weights['lambdaTerm'] * lambdaTerm))
             else:
                 if velocity_correction:
                     Jj = ((weights['actuationTerm'] * actuationTerm + 
@@ -1524,7 +1524,7 @@ for case in cases:
                 else:
                     Jj = ((weights['actuationTerm'] * actuationTerm + 
                            weights['jointAccTerm'] * jointAccTerm +                
-                           weights['lambdaTerm'] * lambdaTerm) * h * B[j + 1])   
+                           weights['lambdaTerm'] * lambdaTerm))   
                     
             if actuation == 'muscle-driven':
                 activationDtTerm = f_NMusclesSum2(aDtk)
@@ -1623,7 +1623,7 @@ for case in cases:
                     # Constraint
                     diffTj = f_diffTorques(Tj[joints.index(joint)],
                                            muscleTorquej, dampingTorquej) 
-                    # g_eq.append(diffTj)
+                    g_eq.append(diffTj)
                 # Activation dynamics (implicit formulation)
                 act1 = aDtk_nsc + akj[:, j+1] / deactivationTimeConstant
                 act2 = aDtk_nsc + akj[:, j+1] / activationTimeConstant
