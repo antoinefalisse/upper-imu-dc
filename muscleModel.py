@@ -168,6 +168,15 @@ class muscleModel:
         
         return hillEquilibrium
     
+    def deriveHillEquilibriumNoPassive(self):        
+        self.getActiveFiberForce()
+        
+        hillEquilibrium = ((np.multiply(self.normActiveFiberForce, 
+                                        self.cosPennationAngle)) - 
+                                        self.normTendonForce)
+        
+        return hillEquilibrium
+    
 #def main():
 #    mtParameters = np.array([[2.5],[4.5],[6.5],[8.5],[10.5]])
 #    activation = 0.8

@@ -94,6 +94,48 @@ def hillEquilibrium(mtParameters, tendonCompliance, tendonShift,
     
     return f_hillEquilibrium
 
+def hillEquilibriumNoPassive(mtParameters, tendonCompliance, tendonShift,
+                             specificTension):
+    
+    NMuscles = mtParameters.shape[1]
+    # Function variables
+    activation = ca.SX.sym('activation', NMuscles)
+    mtLength = ca.SX.sym('mtLength', NMuscles)
+    mtVelocity = ca.SX.sym('mtVelocity', NMuscles)
+    normTendonForce = ca.SX.sym('normTendonForce', NMuscles)
+    normTendonForceDT = ca.SX.sym('normTendonForceDT', NMuscles)
+     
+    hillEquilibrium = ca.SX(NMuscles, 1)
+    tendonForce = ca.SX(NMuscles, 1)
+    activeFiberForce = ca.SX(NMuscles, 1)
+    normActiveFiberLengthForce = ca.SX(NMuscles, 1)
+    normFiberLength = ca.SX(NMuscles, 1)
+    fiberVelocity = ca.SX(NMuscles, 1)
+    
+    from muscleModel import muscleModel
+    for m in range(NMuscles):    
+        muscle = muscleModel(mtParameters[:, m], activation[m], mtLength[m],
+                             mtVelocity[m], normTendonForce[m], 
+                             normTendonForceDT[m], tendonCompliance[:, m],
+                             tendonShift[:, m], specificTension[:, m])
+        
+        hillEquilibrium[m] = muscle.deriveHillEquilibriumNoPassive()
+        tendonForce[m] = muscle.getTendonForce()
+        activeFiberForce[m] = muscle.getActiveFiberForce()[0]
+        normActiveFiberLengthForce[m] = muscle.getActiveFiberLengthForce()
+        normFiberLength[m] = muscle.getFiberLength()[1]
+        fiberVelocity[m] = muscle.getFiberVelocity()[0]
+        
+    f_hillEquilibriumNoPassive = ca.Function('f_hillEquilibriumNoPassive',
+                                    [activation, mtLength, mtVelocity, 
+                                     normTendonForce, normTendonForceDT], 
+                                     [hillEquilibrium, tendonForce,
+                                      activeFiberForce,
+                                      normActiveFiberLengthForce,
+                                      normFiberLength, fiberVelocity]) 
+    
+    return f_hillEquilibriumNoPassive
+
 def torqueMotorDynamics(NJoints):
     t = 0.035 # time constant       
     

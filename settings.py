@@ -28,6 +28,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': True,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -41,7 +42,6 @@ def getSettings():
                 # 'boundsMarker': 'uniformBoundsMarker',
                 # 'markers_as_controls': True,
                 # 'markers_scaling': 3,
-                # 'conservative_bounds': False
                 },
             '1': {
                 'subjectID' : '0',
@@ -68,6 +68,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -102,6 +103,7 @@ def getSettings():
                 'constraint_vel': False,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -136,6 +138,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': True,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -170,6 +173,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -204,6 +208,7 @@ def getSettings():
                 'constraint_vel': False,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -238,6 +243,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -267,6 +273,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_6',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -302,6 +309,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -331,6 +339,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_8',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -362,6 +371,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -392,6 +402,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -422,6 +433,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -452,6 +464,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -483,6 +496,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -513,6 +527,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_14',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -543,6 +558,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_14',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -573,6 +589,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_14',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -603,6 +620,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -633,6 +651,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -663,6 +682,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -693,6 +713,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_10',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -724,6 +745,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -755,6 +777,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -786,6 +809,7 @@ def getSettings():
                 'constraint_vel': True,
                 'constraint_acc': False,
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -816,6 +840,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_22',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -846,6 +871,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_22',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -876,6 +902,7 @@ def getSettings():
                 'constraint_acc': False,
                 'referenceIMUResultsCase': 'Case_22',
                 'actuation': 'torque-driven',
+                'conservative_bounds': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,
@@ -908,6 +935,83 @@ def getSettings():
                 'constraint_acc': False,
                 'actuation': 'muscle-driven',
                 'muscle_approximation': 'multi-dim-poly',
+                'conservative_bounds': True,
+                'filter_training_data_poly': False,
+                'enablePassiveMuscleForces': True,
+                
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actuationTerm': 1,
+                'w_gtJETerm': 1,
+                'w_lambdaTerm': 1,
+                'w_gammaTerm': 1, 
+                'w_activationDt': 1,
+                'w_forceDt': 1, 
+                'w_trackingTerm': 1000
+                },
+            '29': {
+                'subjectID' : '0',
+                'model': 'weldGT_lockedEP_scaled',
+                'trial': 'FLX01',
+                'tracking_data': 'coordinates',
+                'timeInterval': [1.5, 2],                
+                'N': 50,
+                'filter_coordinates_toTrack': True,
+                'coordinates_toTrack': {
+                    'rotational': ['clav_prot', 'clav_elev',
+                        'scapula_abduction', 'scapula_elevation',
+                        'scapula_upward_rot', 'scapula_winging',
+                        'plane_elv', 'shoulder_elv', 'axial_rot'],
+                    'translational': []},
+                'guess_zeroVelocity': True,
+                'guess_zeroAcceleration': True,
+                'guessType': "dataDriven",
+                'velocity_correction': True,
+                'constraint_pos': True,
+                'constraint_vel': True,
+                'constraint_acc': False,
+                'actuation': 'muscle-driven',
+                'muscle_approximation': 'multi-dim-poly',
+                'conservative_bounds': True,
+                'filter_training_data_poly': True,
+                'enablePassiveMuscleForces': True,
+                
+                'w_mATerm': 0,
+                'w_jointAccTerm': 1,
+                'w_actuationTerm': 1,
+                'w_gtJETerm': 1,
+                'w_lambdaTerm': 1,
+                'w_gammaTerm': 1, 
+                'w_activationDt': 1,
+                'w_forceDt': 1, 
+                'w_trackingTerm': 1000
+                },
+            '30': {
+                'subjectID' : '0',
+                'model': 'weldGT_lockedEP_scaled',
+                'trial': 'FLX01',
+                'tracking_data': 'coordinates',
+                'timeInterval': [1.5, 2],                
+                'N': 50,
+                'filter_coordinates_toTrack': True,
+                'coordinates_toTrack': {
+                    'rotational': ['clav_prot', 'clav_elev',
+                        'scapula_abduction', 'scapula_elevation',
+                        'scapula_upward_rot', 'scapula_winging',
+                        'plane_elv', 'shoulder_elv', 'axial_rot'],
+                    'translational': []},
+                'guess_zeroVelocity': True,
+                'guess_zeroAcceleration': True,
+                'guessType': "dataDriven",
+                'velocity_correction': True,
+                'constraint_pos': True,
+                'constraint_vel': True,
+                'constraint_acc': False,
+                'actuation': 'muscle-driven',
+                'muscle_approximation': 'multi-dim-poly',
+                'conservative_bounds': True,
+                'filter_training_data_poly': True,
+                'enablePassiveMuscleForces': False,
                 
                 'w_mATerm': 0,
                 'w_jointAccTerm': 1,

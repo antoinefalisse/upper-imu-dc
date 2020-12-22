@@ -9,7 +9,8 @@ def lexsort_based(data):
     return sorted_data[row_mask]
 
 
-def getInputsMA(pathMuscleAnalysis, ubounds, lbounds, joints, nNodes):
+def getInputsMA(pathMuscleAnalysis, ubounds, lbounds, joints, nNodes, 
+                OpenSimDict):
     
     NJoints = len(joints)
     pathResultsMA = os.path.join(pathMuscleAnalysis, "ResultsMA", "grid_" +
@@ -184,14 +185,14 @@ def MA_parallel(inputs_MA):
     ATool.setResultsDir(inputs_MA["pathResultsSplinesCase"])
     ATool.setCoordinatesFileName(inputs_MA["setCoordinatesFileName"])
     ATool.printToXML(inputs_MA["pathSetup"])   
-    # ATool.run()
-    command = 'opensim-cmd' + ' run-tool ' + inputs_MA["pathSetup"]
-    os.system(command)
-    # Delete unused files (all but lengths and moment arms)
-    for CleanUp in glob.glob(inputs_MA["pathResultsSplinesCase"] + '/*.*'):
-        if ((not CleanUp.startswith(inputs_MA["clean1"])) and 
-            (not CleanUp.startswith(inputs_MA["clean2"]))):    
-            os.remove(CleanUp)
+    # # ATool.run()
+    # command = 'opensim-cmd' + ' run-tool ' + inputs_MA["pathSetup"]
+    # os.system(command)
+    # # Delete unused files (all but lengths and moment arms)
+    # for CleanUp in glob.glob(inputs_MA["pathResultsSplinesCase"] + '/*.*'):
+    #     if ((not CleanUp.startswith(inputs_MA["clean1"])) and 
+    #         (not CleanUp.startswith(inputs_MA["clean2"]))):    
+    #         os.remove(CleanUp)
      
     # # Get MT-length
     # for i in chunkData:

@@ -12,8 +12,7 @@ import copy
 
 # User settings
 # run_options = [True, True, True, True, False, False, True, False, False, False]
-# run_options = [False, False, True, True, True, False, True, True, True, True]
-run_options = [False, False, False, False, False, False, True, False, False, False]
+run_options = [False, False, True, True, True, True, True, True, True, True]
 
 
 solveProblem = run_options[0]
@@ -28,7 +27,7 @@ visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
 # cases = ["26", "26", "27"]
-cases = ["28"]
+cases = ["22"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
@@ -37,6 +36,8 @@ plotPolynomials = False
 plotGuessVsBounds = False
 visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
+visualizeMuscleForces = True
+visualizeLengthApproximation = False
 
 # Numerical Settings
 tol = 4
@@ -91,6 +92,7 @@ for case in cases:
     constraint_vel = settings[case]['constraint_vel']
     constraint_acc = settings[case]['constraint_acc']
     actuation = settings[case]['actuation']
+    conservative_bounds = settings[case]['conservative_bounds']
     
     norm_std = False
     TrCoordinates_toTrack_Bool = False  
@@ -128,6 +130,14 @@ for case in cases:
                     
     if actuation == 'muscle-driven':
         muscle_approximation = settings[case]['muscle_approximation']
+        if muscle_approximation == 'multi-dim-poly':
+            filter_training_data_poly = (
+                settings[case]['filter_training_data_poly'])
+            if filter_training_data_poly:
+                suffix_F_poly = '_filt'
+            else:
+                suffix_F_poly = ''
+        enablePassiveMuscleForces = settings[case]['enablePassiveMuscleForces']  
         weights['activationDt'] = settings[case]['w_activationDt']  
         weights['forceDt'] = settings[case]['w_forceDt']  
     else:
@@ -192,9 +202,16 @@ for case in cases:
     from muscleData import getSpecificTension
     specificTension = getSpecificTension(NMuscles)
     
-    from functionCasADi import hillEquilibrium
-    f_hillEquilibrium = hillEquilibrium(mtParameters, tendonCompliance, 
-                                        tendonShift, specificTension)
+    if actuation == 'muscle-actuated':
+        if enablePassiveMuscleForces:
+            from functionCasADi import hillEquilibrium
+            f_hillEquilibrium = hillEquilibrium(
+                mtParameters, tendonCompliance, tendonShift, specificTension)
+        else:
+            from functionCasADi import hillEquilibriumNoPassive
+            f_hillEquilibriumNoPassive = hillEquilibriumNoPassive(
+                mtParameters, tendonCompliance, tendonShift, specificTension)        
+        
     # Time constants
     activationTimeConstant = 0.015
     deactivationTimeConstant = 0.06    
@@ -324,14 +341,20 @@ for case in cases:
         idxPolynomialJoints = getJointIndices(joints, polynomialJoints)
         os.chdir(pathExternalFunctions)
         F_getPolyApp = ca.external('f_getPolyApp', prefixF + subject[0] + 
-                                    subject[-1] + '_getPolyApp.dll')
+                                   subject[-1] + '_getPolyApp' + 
+                                   suffix_F_poly + '.dll')
         os.chdir(pathMain) 
         
         # Spanning info        
         from muscleData import getSpanningInfo           
         idxSpanningJoints = getSpanningInfo(pathDummyMotion, 
                                             pathMATrainingMotion,
-                                            polynomialJoints, muscles)        
+                                            polynomialJoints, muscles)   
+        # Temporary: used to inform getBoundsPositionConservative()
+        from splines import getROM
+        minima, maxima = getROM(pathMA, polynomialJoints)        
+        minima_ext = np.floor(minima)
+        maxima_ext = np.ceil(maxima)
     
     # %% Damping torques
     from functionCasADi import dampingTorque
@@ -695,12 +718,10 @@ for case in cases:
         uBActJAj = ca.vec(uBActJA.to_numpy().T * np.ones((1, d*N))).full()
         lBActJAj = ca.vec(lBActJA.to_numpy().T * np.ones((1, d*N))).full()
     
-    # if conservative_bounds:
-    #     uBQs, lBQs, scalingQs, _, _ = (
-    #         bounds.getBoundsPositionConservative()) 
-    # else:
-        
-    uBQs, lBQs, scalingQs = bounds.getBoundsPosition()    
+    if conservative_bounds:
+        uBQs, lBQs, scalingQs = bounds.getBoundsPositionConservative()
+    else:        
+        uBQs, lBQs, scalingQs = bounds.getBoundsPosition()    
     uBQsk = ca.vec(uBQs.to_numpy().T * np.ones((1, N+1))).full()
     lBQsk = ca.vec(lBQs.to_numpy().T * np.ones((1, N+1))).full()
     uBQsj = ca.vec(uBQs.to_numpy().T * np.ones((1, d*N))).full()
@@ -822,7 +843,7 @@ for case in cases:
         # run MA in parallel
         from getTrainingDataPolyApp import MA_parallel
         from joblib import Parallel, delayed  
-        useMultiProcessing = True
+        useMultiProcessing = False
         if __name__ == "__main__":
             if useMultiProcessing:
                 Njobs = NThreads
@@ -1459,9 +1480,14 @@ for case in cases:
             # Hill-equilibrium        
             ###################################################################
             if actuation == 'muscle-driven':
-                [hillEquilibriumj, Fj, _, _, _, _, _] = f_hillEquilibrium(
-                     akj[:, j+1], lMTj, vMTj, normFkj_nsc[:, j+1],
-                     normFDtj_nsc[:, j]) 
+                if enablePassiveMuscleForces:
+                    [hillEquilibriumj, Fj, _, _, _, _, _] = (
+                        f_hillEquilibrium(akj[:, j+1], lMTj, vMTj, 
+                          normFkj_nsc[:, j+1], normFDtj_nsc[:, j])) 
+                else:
+                    [hillEquilibriumj, Fj, _, _, _, _] = (
+                        f_hillEquilibriumNoPassive(akj[:, j+1], lMTj, vMTj, 
+                           normFkj_nsc[:, j+1], normFDtj_nsc[:, j])) 
                     
             ###################################################################
             # Cost function
@@ -2204,7 +2230,7 @@ for case in cases:
 #                 passiveJointTorque_mtp_angle_l_opt[0, k] = 0
 #                 passiveJointTorque_mtp_angle_r_opt[0, k] = 0       
 
-        # %% Get muscle-tendon lengths and moment arms
+        # # %% Get muscle-tendon lengths and moment arms
         # lMT_c_opt = np.zeros((N*d, NMuscles))
         # vMT_c_opt = np.zeros((N*d, NMuscles))
         # dM_c_opt = np.zeros((N*d, NMuscles, NPolynomialJoints))
@@ -2343,14 +2369,17 @@ for case in cases:
             Qs_opt_nsc_deg[idxRotationalJoints, :] * 180 / np.pi)             
         
         # %% Write motion file for visualization in OpenSim GUI
-        if writeMotionFile:    
-            # muscleLabels = ([bothSidesMuscle + '/activation' 
-            #                   for bothSidesMuscle in bothSidesMuscles])        
+        if writeMotionFile:                       
             labels = ['time'] + joints   
-            # labels_w_muscles = labels + muscleLabels
+            if actuation == 'muscle-driven':
+                muscleLabels = ([muscle + '/activation' for muscle in muscles]) 
+                labels = labels + muscleLabels
             labels_w_muscles = labels
-            # data = np.concatenate((tgridf.T, Qs_opt_nsc_deg.T, a_opt.T),axis=1)    
-            data = np.concatenate((tgridf.T, Qs_opt_nsc_deg.T),axis=1)
+            if actuation == 'torque-driven':
+                data = np.concatenate((tgridf.T, Qs_opt_nsc_deg.T), axis=1)     
+            elif actuation == 'muscle-driven':
+                data = np.concatenate((tgridf.T, Qs_opt_nsc_deg.T, a_opt.T),
+                                      axis=1)    
             from variousFunctions import numpy2storage
             numpy2storage(labels_w_muscles, data, os.path.join(
                 pathResults, 'kinematics.mot'))
@@ -2501,6 +2530,10 @@ for case in cases:
         if actuation == 'muscle-driven':
             activationDtTerm_opt_all = 0
             forceDtTerm_opt_all = 0
+            activeFiberForce_opt_all = np.zeros((NMuscles,N*d))
+            normFiberLength_opt_all = np.zeros((NMuscles,N*d))
+            passiveFiberForce_opt_all = np.zeros((NMuscles,N*d))
+            lMT_opt_all = np.zeros((NMuscles,N*d))
         lambdaTerm_opt_all = 0
         if velocity_correction:
             gammaTerm_opt_all = 0
@@ -2538,7 +2571,42 @@ for case in cases:
             QsQdotskj_opt_nsc[::2, :] = Qskj_opt_nsc
             QsQdotskj_opt_nsc[1::2, :] = Qdotskj_opt_nsc
             
-            for j in range(d):                    
+            for j in range(d):                     
+                ###########################################################
+                if actuation == 'muscle-driven':
+                    # Polynomial approximations
+                    Qsinj_opt = Qskj_opt_nsc[idxPolynomialJoints, j+1]
+                    Qdotsinj_opt = Qdotskj_opt_nsc[idxPolynomialJoints, j+1]
+                    if muscle_approximation == 'multi-dim-poly':
+                        [lMTj_opt, vMTj_opt, dMj_opt] = F_getPolyApp(
+                            Qsinj_opt, Qdotsinj_opt)                  
+                    # Derive Hill-equilibrium   
+                    if enablePassiveMuscleForces:
+                        [hillEquilibriumj_opt, Fj_opt, activeFiberForcej_opt, 
+                         passiveFiberForcej_opt, normActiveFiberLengthForcej_opt, 
+                         normFiberLengthj_opt, fiberVelocityj_opt] = (
+                             f_hillEquilibrium(akj_opt[:, j+1], lMTj_opt, 
+                               vMTj_opt, normFkj_opt_nsc[:, j+1], 
+                               normFDtj_opt_nsc[:, j])) 
+                        passiveFiberForce_opt_all[:,k*d+j] = (
+                            passiveFiberForcej_opt.full().flatten())
+                    else:
+                        [hillEquilibriumj_opt, Fj_opt, activeFiberForcej_opt, 
+                         normActiveFiberLengthForcej_opt, normFiberLengthj_opt, 
+                         fiberVelocityj_opt] = (
+                             f_hillEquilibriumNoPassive(akj_opt[:, j+1], lMTj_opt, 
+                               vMTj_opt, normFkj_opt_nsc[:, j+1],
+                               normFDtj_opt_nsc[:, j]))  
+                        passiveFiberForce_opt_all[:,k*d+j] = 0                             
+                    lMT_opt_all[:,k*d+j] = (
+                        lMTj_opt.full().flatten())  
+                    activeFiberForce_opt_all[:,k*d+j] = (
+                        activeFiberForcej_opt.full().flatten())         
+                    normFiberLength_opt_all[:,k*d+j] = (
+                        normFiberLengthj_opt.full().flatten())                
+                    assert np.alltrue(np.abs(hillEquilibriumj_opt.full()) < 
+                                      10**(-tol)), "Hill-equilibrium"   
+                
                 # Motor control terms.
                 if actuation == 'muscle-driven':
                     actuationTerm_opt = f_NMusclesSum2(akj_opt[:, j+1])  
@@ -2871,26 +2939,26 @@ for case in cases:
             #     plotVSBounds(y,lb,ub,title)    
             
         if visualizeSimulationResults:
-            ny = np.ceil(np.sqrt(NJoints))   
-            fig, axs = plt.subplots(int(ny), int(ny), sharex=True)    
-            fig.suptitle('Joint coordinates (not tracked)')                  
-            for i, ax in enumerate(axs.flat):
-                if i < NJoints:
-                    # reference data
-                    ax.plot(tgridf[0,:].T, 
-                            refData_offset_nsc[i:i+1,:].T, 
-                            c='black', label='experimental')
-                    # simulated data                    
-                    ax.plot(tgridf[0,:].T, 
-                            Qs_opt_nsc_deg[i:i+1,:].T, 
-                            c='orange', label='simulated')
-                    ax.set_title(joints[i])
-            plt.setp(axs[-1, :], xlabel='Time (s)')
-            plt.setp(axs[:, 0], ylabel='(deg or m)')
-            fig.align_ylabels()
-            handles, labels = ax.get_legend_handles_labels()
-            plt.legend(handles, labels, loc='upper right')
-            
+            if not tracking_data == 'coordinates':
+                ny = np.ceil(np.sqrt(NJoints))   
+                fig, axs = plt.subplots(int(ny), int(ny), sharex=True)    
+                fig.suptitle('Joint coordinates (not tracked)')                  
+                for i, ax in enumerate(axs.flat):
+                    if i < NJoints:
+                        # reference data
+                        ax.plot(tgridf[0,:].T, 
+                                refData_offset_nsc[i:i+1,:].T, 
+                                c='black', label='experimental')
+                        # simulated data                    
+                        ax.plot(tgridf[0,:].T, 
+                                Qs_opt_nsc_deg[i:i+1,:].T, 
+                                c='orange', label='simulated')
+                        ax.set_title(joints[i])
+                plt.setp(axs[-1, :], xlabel='Time (s)')
+                plt.setp(axs[:, 0], ylabel='(deg or m)')
+                fig.align_ylabels()
+                handles, labels = ax.get_legend_handles_labels()
+                plt.legend(handles, labels, loc='upper right')            
             
             ncol = 6 
             nrow = np.ceil(NJoints/ncol)           
@@ -2916,14 +2984,33 @@ for case in cases:
             fig.align_ylabels()            
             plt.legend(handles, labels, loc='upper right')
             
+        if visualizeMuscleForces and actuation == 'muscle-driven':
+            fig, axs = plt.subplots(6, 6, sharex=True)    
+            fig.suptitle('Length vs. Force')  
+            for i, ax in enumerate(axs.flat):
+                if i < NMuscles:
+                    ax.plot(normFiberLength_opt_all[i,:], 
+                            c='black', label='fiber lengths')
+                    ax.set_ylabel('Length (-)')
+                    ax1 = ax.twinx()
+                    # reference data
+                    ax1.plot(activeFiberForce_opt_all[i,:], 
+                            c='red', label='active force')
+                    ax1.plot(passiveFiberForce_opt_all[i,:], 
+                            c='red', linestyle=':', label='passive force')
+                    ax1.set_ylabel('Force (-)', color='red')
+                    handles1, labels1 = ax1.get_legend_handles_labels()
+            plt.setp(axs[-1, :], xlabel='Time (s)')   
+            plt.legend(handles1, labels1, loc='upper right')
+            fig.align_ylabels()
+            
         if visualizeConstraintErrors:
             # Contraint errors       
             constraint_levels = ["positions", "velocity", "acceleration"]
             constraint_labels = []
             for constraint_level in constraint_levels:
                 for count in range(NHolConstraints):
-                    constraint_labels.append(constraint_level + '_' + str(count))
-            
+                    constraint_labels.append(constraint_level+ '_' +str(count))            
             import matplotlib.pyplot as plt 
             fig, axs = plt.subplots(3, 3, sharex=True) 
             fig.suptitle('Constraint errors')     
@@ -2935,6 +3022,39 @@ for case in cases:
             plt.setp(axs[-1, :], xlabel='Time (s)')
             plt.setp(axs[:, 0], ylabel='(todo)')
             fig.align_ylabels()
+            
+        if visualizeLengthApproximation:
+            # Import lengths from MA based on optimal solution
+            pathResultsMA = os.path.join(pathResults, 'ResultsMA')
+            pathResultsMALength = os.path.join(
+                pathResultsMA, 'subject01_MuscleAnalysis_Length.sto')
+            from variousFunctions import getFromStorage
+            # We skip the first row to compare with approximated lengths
+            maLengths = getFromStorage(
+                pathResultsMALength, muscles).to_numpy()[1::,1::].T    
+            fig, axs = plt.subplots(6, 6, sharex=True)    
+            fig.suptitle('Approximated vs. reference muscle-tendon lengths')  
+            for i, ax in enumerate(axs.flat):
+                if i < NMuscles:
+                    ax.plot(lMT_opt_all[i,::3], 
+                            c='black', label='approximated fiber lengths')
+                    ax.plot(maLengths[i,:], 
+                            c='orange', label='reference fiber lengths')
+                    ax.set_ylabel('Length (-)')
+                    handles, labels = ax.get_legend_handles_labels()
+            plt.setp(axs[-1, :], xlabel='Time (s)')        
+            plt.legend(handles, labels, loc='upper right')
+            fig.align_ylabels()
+            
+            from variousFunctions import getIK
+            dummyMotion_filt = (getIK(pathDummyMotion, joints)[1]).to_numpy()   
+            dummyMotion_filt_deg = copy.deepcopy(dummyMotion_filt)
+            dummyMotion_filt_deg[:,1::] = (
+                dummyMotion_filt_deg[:,1::] * 180 / np.pi)
+            
+            labels = ['time'] + joints   
+            numpy2storage(labels, dummyMotion_filt_deg,
+                          pathDummyMotion[:-4] + "_filt.mot")
             
 #         if visualizeSimulationResults:
 #             # Reference from full marker set
