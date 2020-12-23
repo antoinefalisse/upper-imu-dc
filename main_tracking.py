@@ -8,8 +8,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, True, True, False, False, True, False, False, False]
-run_options = [False, False, True, True, True, False, False, False, False, False]
+run_options = [True, True, False, False, False, False, False, False, False, False]
+# run_options = [False, False, True, True, True, False, True, True, True, False]
 
 
 solveProblem = run_options[0]
@@ -23,7 +23,7 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["44"]
+cases = ["57"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
@@ -49,7 +49,6 @@ settings = getSettings()
 for case in cases:
     # Weights in cost function
     weights = {
-        'mATerm': settings[case]['w_mATerm'],
         'jointAccTerm': settings[case]['w_jointAccTerm'],
         'actuationTerm': settings[case]['w_actuationTerm'], 
         'gtJETerm': settings[case]['w_gtJETerm'], 
@@ -156,7 +155,6 @@ for case in cases:
     pathTRC = os.path.join(pathSubject, 'TRC', trial + ".trc")
     pathExternalFunctions = os.path.join(pathMain, 'ExternalFunctions')
     pathIKFolder = os.path.join(pathSubject, 'IK', model)
-    # pathGRFFolder = os.path.join(pathSubject, 'GRF')
     
     filename = os.path.basename(__file__)
     pathCase = 'Case_' + case
@@ -198,7 +196,7 @@ for case in cases:
     from muscleData import getSpecificTension
     specificTension = getSpecificTension(NMuscles)
     
-    if actuation == 'muscle-actuated':
+    if actuation == 'muscle-driven':
         if enablePassiveMuscleForces:
             from functionCasADi import hillEquilibrium
             f_hillEquilibrium = hillEquilibrium(
@@ -416,12 +414,12 @@ for case in cases:
         if track_orientations:
             # In practice, we have rotation matrices rather than Euler angles.
             # We first compute Euler angles from the rotations matrices. Those
-            # angles will later converted back to rotation matrices when
+            # angles will later be converted back to rotation matrices when
             # calculating the error angle between virtual and experimental imu.
             # Passing rotation matrices to the function where the error angle
             # is calculated is too risky though. Had weird results when trying.
             pathR = os.path.join(pathIMUFolder, trial + '_orientations_' + 
-                                  track_imus_frame + '.mot')      
+                                 track_imus_frame + '.mot')      
             R_data = getFromStorage(pathR, R_labels)             
             from variousFunctions import getBodyFixedXYZFromDataFrameR
             XYZ_data = getBodyFixedXYZFromDataFrameR(R_data, imuData_toTrack)      
@@ -432,7 +430,7 @@ for case in cases:
     NHolConstraints = 3
     holConstraints_titles = []
     for count in range(NHolConstraints):
-        holConstraints_titles.append('hol_ctaint_' + str(count))     
+        holConstraints_titles.append('hol_cst_' + str(count))     
     NVelCorrs = 6 # clavicle and scapula mobilities       
     os.chdir(pathExternalFunctions)
     if tracking_data == "markers":
@@ -487,8 +485,8 @@ for case in cases:
             # experimental sensor orientations. The Simbody functions used for
             # this calculation involve a bunch of conditional statements (eg,
             # when expressing rotations as quaternions) and I was not sure it
-            # would be fine with AD. The funcion derivatives will therefore be
-            # computed with FD. SHould not have too much of an effect.
+            # would be fine with AD. The function derivatives will therefore be
+            # computed with FD. Should not have too much of an effect.
             F_RError = ca.external('F', 'RError_Euler_FD.dll', dict(
                 enable_fd=True, enable_forward=False, enable_reverse=False,
                 enable_jacobian=False, fd_method='forward'))
@@ -907,8 +905,7 @@ for case in cases:
                                          scalingXYZ)
     if actuation == 'muscle-driven':
         guessFDt = guess.getGuessForceDerivative(scalingFDt)
-        guessFDtCol = guess.getGuessForceDerivativeCol()  
-    
+        guessFDtCol = guess.getGuessForceDerivativeCol()      
     # if tracking_data == "markers":
     #     guessMarker = guess.getGuessMarker(
     #         markers_toTrack, marker_data_interp, scalingMarker)    
@@ -919,6 +916,7 @@ for case in cases:
     #     if norm_std:
     #         dataToTrack_std_sc = np.reshape(np.std(dataToTrack_sc, axis=1),
     #                                         (-1, 1)) * np.ones((1, N))        
+    
     if tracking_data == "coordinates":
         from variousFunctions import scaleDataFrame        
         dataToTrack_sc = scaleDataFrame(
@@ -1362,8 +1360,7 @@ for case in cases:
                     ub = uBXYZ.to_numpy().T
                     y = guessXYZ.to_numpy().T
                     title='XYZ at mesh points' 
-                    plotVSBounds(y,lb,ub,title)  
-            
+                    plotVSBounds(y,lb,ub,title)              
             # if tracking_data == "markers" and markers_as_controls:
             #     # Marker trajectories
             #     lb = lBMarker.to_numpy().T
@@ -1436,6 +1433,8 @@ for case in cases:
                 normFkj_nsc = normFkj * (scalingF.to_numpy().T * np.ones((1, d+1)))
             elif actuation == 'torque-driven':
                 aActJkj_nsc = aActJkj * (scalingActJA.to_numpy().T * np.ones((1, d+1)))
+            if enableGroundThorax:
+                aGTJkj_nsc = aGTJkj * (scalingGTJA.to_numpy().T * np.ones((1, d+1)))
             Qskj_nsc = Qskj * (scalingQs.to_numpy().T * np.ones((1, d+1)))
             Qdotskj_nsc = Qdotskj * (scalingQdots.to_numpy().T * np.ones((1, d+1)))
             # Controls
@@ -1468,10 +1467,10 @@ for case in cases:
             ###################################################################
             # Polynomial approximations
             ###################################################################
-            if actuation == 'muscle-driven':
-                Qsinj = Qskj_nsc[idxPolynomialJoints, j+1]
-                Qdotsinj = Qdotskj_nsc[idxPolynomialJoints, j+1]
+            if actuation == 'muscle-driven':                
                 if muscle_approximation == 'multi-dim-poly':
+                    Qsinj = Qskj_nsc[idxPolynomialJoints, j+1]
+                    Qdotsinj = Qdotskj_nsc[idxPolynomialJoints, j+1]
                     [lMTj, vMTj, dMj] = F_getPolyApp(Qsinj, Qdotsinj)  
             
             ###################################################################
@@ -1493,37 +1492,20 @@ for case in cases:
             if actuation == 'muscle-driven':
                 actuationTerm = f_NMusclesSum2(akj[:, j+1]) 
             elif actuation == 'torque-driven':
-                actuationTerm = f_NActJointsSum2(eActJk) 
+                actuationTerm = f_NActJointsSum2(eActJk)                 
+            jointAccTerm = f_NJointsSum2(Qdotdotsj[:, j])   
+            lambdaTerm = f_NHolConstraintsSum2(lambdaj[:, j])                  
+                
+            Jj = ((weights['actuationTerm'] * actuationTerm + 
+                   weights['jointAccTerm'] * jointAccTerm +                
+                   weights['lambdaTerm'] * lambdaTerm))    
+            
+            if velocity_correction:
+                gammaTerm = f_NHolConstraintsSum2(gammaj[:, j])  
+                Jj += (weights['gammaTerm'] * gammaTerm)
             if enableGroundThorax:
                 gtJETerm = f_NGroundThoraxJointsSum2(eGTJk) 
-            jointAccTerm = f_NJointsSum2(Qdotdotsj[:, j])   
-            lambdaTerm = f_NHolConstraintsSum2(lambdaj[:, j])
-            if velocity_correction:
-                gammaTerm = f_NHolConstraintsSum2(gammaj[:, j])    
-            
-            if enableGroundThorax:
-                if velocity_correction:
-                    Jj = ((weights['actuationTerm'] * actuationTerm + 
-                           weights['gtJETerm'] * gtJETerm + 
-                           weights['jointAccTerm'] * jointAccTerm +                
-                           weights['lambdaTerm'] * lambdaTerm + 
-                           weights['gammaTerm'] * gammaTerm))
-                else:
-                    Jj = ((weights['actuationTerm'] * actuationTerm + 
-                           weights['gtJETerm'] * gtJETerm +
-                           weights['jointAccTerm'] * jointAccTerm +                
-                           weights['lambdaTerm'] * lambdaTerm))
-            else:
-                if velocity_correction:
-                    Jj = ((weights['actuationTerm'] * actuationTerm + 
-                           weights['jointAccTerm'] * jointAccTerm +                
-                           weights['lambdaTerm'] * lambdaTerm + 
-                           weights['gammaTerm'] * gammaTerm))
-                else:
-                    Jj = ((weights['actuationTerm'] * actuationTerm + 
-                           weights['jointAccTerm'] * jointAccTerm +                
-                           weights['lambdaTerm'] * lambdaTerm))   
-                    
+                Jj += (weights['gtJETerm'] * gtJETerm)                    
             if actuation == 'muscle-driven':
                 activationDtTerm = f_NMusclesSum2(aDtk)
                 forceDtTerm = f_NMusclesSum2(normFDtj[:, j])
@@ -1547,8 +1529,8 @@ for case in cases:
                                   Qdotdotsj_nsc_in[:, j], 
                                   lambdaj_nsc[:, j]))
                 
-            # Extract simulated IMU signals for tracking
-            # terms; imuj is overwritten in the loop over j but we are only
+            # Extract simulated IMU signals for tracking terms.
+            # imuj is overwritten in the loop over j but we are only
             # interested in the last collocation point, since it corresponds
             # to the mesh point so this is fine, okay but not ideal.
             if tracking_data == "imus":
@@ -1637,19 +1619,19 @@ for case in cases:
                     # Damping torque
                     dampingTorquej = f_dampingTorque(
                         Qdotskj_nsc[joints.index(joint), j+1])
-                    # diffTj = f_diffTorques(
-                    #     Tj[joints.index(joint)] / scalingActJA.iloc[0][joint],
-                    #     aActJkj[c, j+1], 0)
-                    diffTj = f_diffTorques(
-                        Tj[joints.index(joint)],
-                        aActJkj_nsc[c, j+1], dampingTorquej)
+                    # Constraint
+                    diffTj = f_diffTorques(Tj[joints.index(joint)],
+                                           aActJkj_nsc[c, j+1], dampingTorquej)
                     g_eq.append(diffTj)                
             if enableGroundThorax:
                 # Actuate ground thorax joints with ideal motor torques.
-                for count, joint in enumerate(groundThoraxJoints):
-                    diffTj = f_diffTorques(
-                        Tj[joints.index(joint)] / scalingGTJE.iloc[0][joint],
-                        aGTJkj[count, j+1], 0)
+                for c, joint in enumerate(groundThoraxJoints):
+                    # Damping torque
+                    dampingTorquej = f_dampingTorque(
+                        Qdotskj_nsc[joints.index(joint), j+1])
+                    # Constraint
+                    diffTj = f_diffTorques(Tj[joints.index(joint)],
+                                           aGTJkj_nsc[c, j+1], dampingTorquej)
                     g_eq.append(diffTj)
                     
             ###################################################################                
@@ -1672,6 +1654,7 @@ for case in cases:
             
         #######################################################################
         # Create map construct (parallel computing)
+        # TODO: can simplify (in and out)
         if actuation == 'muscle-driven':
             if enableGroundThorax:
                 if velocity_correction:
@@ -1772,7 +1755,8 @@ for case in cases:
         f_c_map = f_c.map(N, parallelMode, NThreads)  
         
         #######################################################################
-        # Call map construct with opti variables and set constraints.        
+        # Call map construct with opti variables and set constraints.      
+        # TODO: can simplify (in and out)
         if actuation == 'muscle-driven':
             if enableGroundThorax:
                 if velocity_correction:
@@ -1866,7 +1850,7 @@ for case in cases:
         opti.subject_to(ca.vec(c_g_eq) == 0)
         if actuation == 'muscle-driven':
             opti.subject_to(ca.vec(c_g_ineq1) >= 0)
-            opti.subject_to(ca.vec(c_g_ineq2) <= 1/activationTimeConstant)  
+            opti.subject_to(ca.vec(c_g_ineq2) <= 1 / activationTimeConstant)  
                 
         #######################################################################
         # Equality / continuity constraints
@@ -1893,7 +1877,8 @@ for case in cases:
                 opti.subject_to(aActJ[:, k+1] == ca.mtimes(aActJkj2, D))  
             
         #######################################################################
-        # Add tracking terms, only at the mesh points.  
+        # Tracking terms, only at the mesh points.  
+        
         # Adjust the y location of the markers using the offset 
         # if tracking_data == "markers": 
         #     dataToTrack_sc_offset = ca.MX(dataToTrack_sc.shape[0],
@@ -1968,8 +1953,7 @@ for case in cases:
             # imposing those controls to match the simulated data.
             imu_u_nsc = ca.vertcat(angVel_u_nsc, linAcc_u_nsc)
             opti.subject_to(imu_u_nsc - 
-                            imu_s_nsc[:imu_u_nsc.shape[0],:] == 0)   
-            
+                            imu_s_nsc[:imu_u_nsc.shape[0],:] == 0)            
             if track_orientations:                
                 JTrackR = f_RToTrack_k_map(XYZ_u, XYZ_data_interp_sc)
                 JTrackR_sc = (weights['trackingTerm'] * 
@@ -2161,37 +2145,24 @@ for case in cases:
         # %% Unscale results
         if actuation == 'muscle-driven':
             normF_opt_nsc = normF_opt * (scalingF.to_numpy().T * np.ones((1, N+1)))
-            normF_c_opt_nsc = normF_c_opt * (scalingF.to_numpy().T * 
-                                                  np.ones((1, d*N)))    
+            normF_c_opt_nsc = normF_c_opt * (scalingF.to_numpy().T * np.ones((1, d*N)))    
             aDt_opt_nsc = aDt_opt * (scalingADt.to_numpy().T * np.ones((1, N)))
-            normFDt_c_opt_nsc = normFDt_c_opt * (scalingFDt.to_numpy().T * 
-                                                  np.ones((1, d*N)))
+            normFDt_c_opt_nsc = normFDt_c_opt * (scalingFDt.to_numpy().T * np.ones((1, d*N)))
         Qs_opt_nsc = Qs_opt * (scalingQs.to_numpy().T * np.ones((1, N+1)))
-        Qs_c_opt_nsc = Qs_c_opt * (scalingQs.to_numpy().T * 
-                                        np.ones((1, d*N)))
-        Qdots_opt_nsc = Qdots_opt * (scalingQdots.to_numpy().T * 
-                                      np.ones((1, N+1)))
-        Qdots_c_opt_nsc = Qdots_c_opt * (scalingQdots.to_numpy().T * 
-                                              np.ones((1, d*N)))
-        Qdotdots_c_opt_nsc = Qdotdots_c_opt * (
-            scalingQdotdots.to_numpy().T * np.ones((1, d*N)))
-        lambda_c_opt_nsc = lambda_c_opt * (
-            scalingLambda.to_numpy().T * np.ones((1, d*N)))
+        Qs_c_opt_nsc = Qs_c_opt * (scalingQs.to_numpy().T * np.ones((1, d*N)))
+        Qdots_opt_nsc = Qdots_opt * (scalingQdots.to_numpy().T * np.ones((1, N+1)))
+        Qdots_c_opt_nsc = Qdots_c_opt * (scalingQdots.to_numpy().T * np.ones((1, d*N)))
+        Qdotdots_c_opt_nsc = Qdotdots_c_opt * (scalingQdotdots.to_numpy().T * np.ones((1, d*N)))
+        lambda_c_opt_nsc = lambda_c_opt * (scalingLambda.to_numpy().T * np.ones((1, d*N)))
         if velocity_correction:
-            gamma_c_opt_nsc = gamma_c_opt * (
-                scalingGamma.to_numpy().T * np.ones((1, d*N)))
+            gamma_c_opt_nsc = gamma_c_opt * (scalingGamma.to_numpy().T * np.ones((1, d*N)))
         if tracking_data == "imus":
-            angVel_u_opt_nsc = angVel_u_opt * (scalingAngVel.to_numpy().T * 
-                                               np.ones((1, N)))
-            linAcc_u_opt_nsc = linAcc_u_opt * (scalingLinAcc.to_numpy().T * 
-                                               np.ones((1, N)))
-            imu_u_opt_nsc = np.concatenate((angVel_u_opt_nsc,
-                                            linAcc_u_opt_nsc), axis=0)
-            imu_u_opt_sc = np.concatenate((angVel_u_opt,
-                                           linAcc_u_opt), axis=0)
+            angVel_u_opt_nsc = angVel_u_opt * (scalingAngVel.to_numpy().T * np.ones((1, N)))
+            linAcc_u_opt_nsc = linAcc_u_opt * (scalingLinAcc.to_numpy().T * np.ones((1, N)))
+            imu_u_opt_nsc = np.concatenate((angVel_u_opt_nsc, linAcc_u_opt_nsc), axis=0)
+            imu_u_opt_sc = np.concatenate((angVel_u_opt, linAcc_u_opt), axis=0)
             if track_orientations:
-                XYZ_u_opt_nsc = XYZ_u_opt * (scalingXYZ.to_numpy().T * 
-                                             np.ones((1, N)))
+                XYZ_u_opt_nsc = XYZ_u_opt * (scalingXYZ.to_numpy().T * np.ones((1, N)))
         
 #         if tracking_data == "markers" and markers_as_controls:
 #             marker_u_opt_nsc = marker_u_opt * (scalingMarker.to_numpy().T * 
@@ -2205,36 +2176,9 @@ for case in cases:
 #                                 Qs_opt_nsc[joints.index('pelvis_tx'), 0])
 #             simSpeed_opt = distTraveled_opt / timeElapsed
 #             if stats['success']:
-#                 assert (np.abs(simSpeed_opt-targetSpeed) < 10**(-5)), "error speed"
-        
-#         # %% Extract passive joint torques
-#         linearPassiveJointTorque_mtp_angle_l_opt = np.zeros((1, N+1))
-#         linearPassiveJointTorque_mtp_angle_r_opt = np.zeros((1, N+1))  
-#         passiveJointTorque_mtp_angle_l_opt = np.zeros((1, N+1))
-#         passiveJointTorque_mtp_angle_r_opt = np.zeros((1, N+1))
-#         for k in range(N+1):
-#             linearPassiveJointTorque_mtp_angle_l_opt[0, k] = (
-#                 f_linearPassiveMtpTorque(
-#                     Qs_opt_nsc[joints.index('mtp_angle_l'), k],
-#                     Qdots_opt_nsc[joints.index('mtp_angle_l'), k]))
-#             linearPassiveJointTorque_mtp_angle_r_opt[0, k] = (
-#                 f_linearPassiveMtpTorque(
-#                     Qs_opt_nsc[joints.index('mtp_angle_r'), k],
-#                     Qdots_opt_nsc[joints.index('mtp_angle_r'), k]))             
-#             if enableLimitTorques:
-#                 passiveJointTorque_mtp_angle_l_opt[0, k] = (
-#                     f_passiveJointTorque_mtp_angle(
-#                         Qs_opt_nsc[joints.index('mtp_angle_l'), k],
-#                         Qdots_opt_nsc[joints.index('mtp_angle_l'), k]))
-#                 passiveJointTorque_mtp_angle_r_opt[0, k] = (
-#                     f_passiveJointTorque_mtp_angle(
-#                         Qs_opt_nsc[joints.index('mtp_angle_r'), k],
-#                         Qdots_opt_nsc[joints.index('mtp_angle_r'), k]))
-#             else:
-#                 passiveJointTorque_mtp_angle_l_opt[0, k] = 0
-#                 passiveJointTorque_mtp_angle_r_opt[0, k] = 0       
+#                 assert (np.abs(simSpeed_opt-targetSpeed) < 10**(-5)), "error speed"             
 
-        # # %% Get muscle-tendon lengths and moment arms
+        # %% Get muscle-tendon lengths and moment arms
         # lMT_c_opt = np.zeros((N*d, NMuscles))
         # vMT_c_opt = np.zeros((N*d, NMuscles))
         # dM_c_opt = np.zeros((N*d, NMuscles, NPolynomialJoints))
@@ -2271,30 +2215,30 @@ for case in cases:
         QsQdots_opt_nsc_in = np.zeros((NJoints_w_ElbowProSup*2, N+1))
         QsQdots_opt_nsc_in[idxJoints_in_Joints_w_ElbowProSup_Qs, :] = Qs_opt_nsc
         QsQdots_opt_nsc_in[idxJoints_in_Joints_w_ElbowProSup_Qdots, :] = Qdots_opt_nsc
+        Qdotdots_opt_nsc_in = np.zeros((NJoints_w_ElbowProSup, N))
+        Qdotdots_opt_nsc_in[idxJoints_in_Joints_w_ElbowProSup_Qdotdots,:] = Qdotdots_c_opt_nsc[:,d-1::d]
         if not enableElbowProSup:
             QsQdots_opt_nsc_in[idxElbowProSup_in_Joints_w_ElbowProSup_Qs, :] = (
                     np.concatenate((elbow_flex_defaultValue * np.ones((1, N+1)), 
                                     pro_sup_defaultValue * np.ones((1, N+1))), 
                                    axis=0))
             QsQdots_opt_nsc_in[idxElbowProSup_in_Joints_w_ElbowProSup_Qdots, :] = 0   
-        Qdotdots_opt_nsc_in = np.zeros((NJoints_w_ElbowProSup, N))
-        Qdotdots_opt_nsc_in[idxJoints_in_Joints_w_ElbowProSup_Qdotdots,:] = Qdotdots_c_opt_nsc[:,d-1::d]
-        if not enableElbowProSup:
-            Qdotdots_opt_nsc_in[idxElbowProSup_in_Joints_w_ElbowProSup,:] = 0
-            
-            
+            Qdotdots_opt_nsc_in[idxElbowProSup_in_Joints_w_ElbowProSup,:] = 0            
         lambda_opt = lambda_c_opt_nsc[:,d-1::d] 
         if velocity_correction:
             gamma_opt = gamma_c_opt_nsc[:,d-1::d] 
         F1_out = np.zeros((NOutput_F1 , N))
         for k in range(N):    
             if velocity_correction:
-                Tj = F1(ca.vertcat(QsQdots_opt_nsc_in[:, k+1], Qdotdots_opt_nsc_in[:, k],
+                Tj = F1(ca.vertcat(QsQdots_opt_nsc_in[:, k+1],
+                                   Qdotdots_opt_nsc_in[:, k],
                                    lambda_opt[:, k], gamma_opt[:, k]))
             else:
-                Tj = F(ca.vertcat(QsQdots_opt_nsc_in[:, k+1], Qdotdots_opt_nsc_in[:, k],
+                Tj = F(ca.vertcat(QsQdots_opt_nsc_in[:, k+1],
+                                  Qdotdots_opt_nsc_in[:, k],
                                   lambda_opt[:, k]))
-            F1_out[:, k] = Tj.full().T                    
+            F1_out[:, k] = Tj.full().T          
+            
 #         if tracking_data == "markers":
 #             marker_sim_opt = F1_out[idxMarker["toTrack"], :] 
 #             if stats['success'] and markers_as_controls:
@@ -2317,10 +2261,10 @@ for case in cases:
         XYZ_sim_opt_groundFrame = F1_out[idxIMUs["radius"]["all"]["groundFrame"]["XYZ"], :]
         
         if stats['success']:
-            assert np.alltrue(
-                np.abs(kinCon_opt[:6,:]) < 10**(-tol)), "error kin constraints"
-            assert np.alltrue(stations_opt[:3,:] - 
-                              stations_opt[3:,:] < 10**(-tol)), "error stations"   
+            assert np.alltrue(np.abs(kinCon_opt[:6,:]) 
+                              < 10**(-tol)), "error kin constraints"
+            assert np.alltrue(stations_opt[:3,:] - stations_opt[3:,:] 
+                              < 10**(-tol)), "error stations"   
             if tracking_data == "imus":
                 if track_imus_frame == "bodyFrame":
                     assert np.alltrue(
@@ -2452,8 +2396,8 @@ for case in cases:
                     scale_angles = 180 / np.pi
                 else:
                     scale_angles = 1
-                refData_offset_nsc[count,:] = refData_offset_nsc[count,:] * scale_angles
-                    
+                refData_offset_nsc[count,:] = (refData_offset_nsc[count,:] * 
+                                               scale_angles)                    
             # if offset_ty and tracking_data == "coordinates":                    
             #     refData_offset_nsc[joints.index("pelvis_ty")] = (
             #         refData_nsc[joints.index("pelvis_ty")] + 
@@ -2634,8 +2578,7 @@ for case in cases:
                 if actuation == 'muscle-driven':
                     activationDtTerm_opt_all += weights['activationDt'] * activationDtTerm_opt * h * B[j + 1] / timeElapsed 
                     forceDtTerm_opt_all += weights['forceDt'] * forceDtTerm_opt * h * B[j + 1] / timeElapsed          
-                lambdaTerm_opt_all += weights['lambdaTerm'] * lambdaTerm_opt * h * B[j + 1] / timeElapsed 
-                
+                lambdaTerm_opt_all += weights['lambdaTerm'] * lambdaTerm_opt * h * B[j + 1] / timeElapsed                 
         
         # Tracking terms
         # if tracking_data == "markers":
@@ -2717,8 +2660,8 @@ for case in cases:
                               jointAccTerm_opt_all.full() + 
                               lambdaTerm_opt_all.full()) 
         if actuation == 'muscle-driven':
-            JMotor_opt += (activationDtTerm_opt_all +
-                           forceDtTerm_opt_all)           
+            JMotor_opt += (activationDtTerm_opt_all.full() +
+                           forceDtTerm_opt_all.full())           
                 
         # Combined term
         JAll_opt = JTrack_opt_sc + JMotor_opt
@@ -2727,7 +2670,6 @@ for case in cases:
             <= 1e-5), "decomposition cost"
         
         JTerms = {}
-        # JTerms["mATerm"] = mATerm_opt_all.full()[0][0]
         JTerms["actuationTerm"] = actuationTerm_opt_all.full()[0][0]
         if enableGroundThorax:
             JTerms["gtJETerm"] = gtJETerm_opt_all.full()[0][0]
@@ -2736,28 +2678,30 @@ for case in cases:
         if velocity_correction:
             JTerms["gammaTerm"] = gammaTerm_opt_all.full()[0][0]
         JTerms["trackingTerm"] = JTrack_opt_sc[0][0]
-        # JTerms["mATerm_sc"] = JTerms["mATerm"] / JAll_opt[0][0]
         JTerms["actuationTerm_sc"] = JTerms["actuationTerm"] / JAll_opt[0][0]
         if enableGroundThorax:                
             JTerms["gtJETerm_sc"] = JTerms["gtJETerm"] / JAll_opt[0][0]
         JTerms["jointAccTerm_sc"] = JTerms["jointAccTerm"] / JAll_opt[0][0]
-        # JTerms["activationDtTerm_sc"] = JTerms["activationDtTerm"] / JAll_opt[0][0]
-        # JTerms["forceDtTerm_sc"] = JTerms["forceDtTerm"] / JAll_opt[0][0]
+        if actuation == 'muscle-driven':
+            JTerms["activationDtTerm"] = activationDtTerm_opt_all.full()[0][0]
+            JTerms["forceDtTerm"] = forceDtTerm_opt_all.full()[0][0]
+            JTerms["activationDtTerm_sc"] = JTerms["activationDtTerm"] / JAll_opt[0][0]
+            JTerms["forceDtTerm_sc"] = JTerms["forceDtTerm"] / JAll_opt[0][0]
         JTerms["lambdaTerm_sc"] = JTerms["lambdaTerm"] / JAll_opt[0][0]
         if velocity_correction:
             JTerms["gammaTerm_sc"] = JTerms["gammaTerm"] / JAll_opt[0][0]
         JTerms["trackingTerm_sc"] = JTerms["trackingTerm"] / JAll_opt[0][0]
         
-        # print("Activations: " + str(np.round(JTerms["mATerm_sc"] * 100, 2)) + "%")
-        print("ActJ Excitations: " + str(np.round(JTerms["actuationTerm_sc"] * 100, 2)) + "%")
+        print("Actuations: " + str(np.round(JTerms["actuationTerm_sc"] * 100, 2)) + "%")
         if enableGroundThorax:
             print("GTJ Excitations: " + str(np.round(JTerms["gtJETerm_sc"] * 100, 2)) + "%")
         print("Joint Accelerations: " + str(np.round(JTerms["jointAccTerm_sc"] * 100, 2)) + "%")
         print("Lambda: " + str(np.round(JTerms["lambdaTerm_sc"] * 100, 2)) + "%")
         if velocity_correction:
             print("Gamma: " + str(np.round(JTerms["gammaTerm_sc"] * 100, 2)) + "%")
-        # print("Activations dt: " + str(np.round(JTerms["activationDtTerm_sc"] * 100, 2)) + "%")
-        # print("Forces dt: " + str(np.round(JTerms["forceDtTerm_sc"] * 100, 2)) + "%")
+        if actuation == 'muscle-driven':
+            print("Activations dt: " + str(np.round(JTerms["activationDtTerm_sc"] * 100, 2)) + "%")
+            print("Forces dt: " + str(np.round(JTerms["forceDtTerm_sc"] * 100, 2)) + "%")
         print("Tracking: " + str(np.round(JTerms["trackingTerm_sc"] * 100, 2)) + "%")
         print("# Iterations: " + str(stats["iter_count"]))
         
@@ -2945,7 +2889,7 @@ for case in cases:
             
         if visualizeSimulationResults:     
             if not tracking_data == 'coordinates':
-                # # Filter the simulated data: TODO loading the mot not ideal.
+                # # Filter the simulated data: TODO loading the .mot not ideal.
                 # Qs_opt_nsc_deg_filt = getIK(
                 #     os.path.join(pathResults, 'kinematics.mot'), joints, 
                 #     degrees=True)[1].to_numpy()[:,1::].T   
