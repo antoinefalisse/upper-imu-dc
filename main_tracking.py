@@ -8,8 +8,8 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, True, True, False, False, True, False, False, False]
-# run_options = [False, False, True, True, True, False, True, True, True, True]
+# run_options = [True, True, True, True, False, False, True, False, False, False]
+run_options = [False, False, True, True, True, False, False, False, False, False]
 
 
 solveProblem = run_options[0]
@@ -23,16 +23,16 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["54"]
+cases = ["44"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = True
+visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
-visualizeMuscleForces = True
+visualizeMuscleForces = False
 visualizeLengthApproximation = False
 
 # Numerical Settings
@@ -2941,8 +2941,19 @@ for case in cases:
             #     title='Marker trajectories at mesh points' 
             #     plotVSBounds(y,lb,ub,title)    
             
-        if visualizeSimulationResults:
+        
+            
+        if visualizeSimulationResults:     
             if not tracking_data == 'coordinates':
+                # # Filter the simulated data: TODO loading the mot not ideal.
+                # Qs_opt_nsc_deg_filt = getIK(
+                #     os.path.join(pathResults, 'kinematics.mot'), joints, 
+                #     degrees=True)[1].to_numpy()[:,1::].T   
+                # data = np.concatenate((tgridf.T, Qs_opt_nsc_deg_filt.T),
+                #           axis=1)
+                # from variousFunctions import numpy2storage
+                # numpy2storage(labels_w_muscles, data, os.path.join(
+                #     pathResults, 'kinematics_filtered.mot'))
                 ny = np.ceil(np.sqrt(NJoints))   
                 fig, axs = plt.subplots(int(ny), int(ny), sharex=True)    
                 fig.suptitle('Joint coordinates (not tracked)')                  
@@ -2956,6 +2967,10 @@ for case in cases:
                         ax.plot(tgridf[0,:].T, 
                                 Qs_opt_nsc_deg[i:i+1,:].T, 
                                 c='orange', label='simulated')
+                        # # simulated data                    
+                        # ax.plot(tgridf[0,:].T, 
+                        #         Qs_opt_nsc_deg_filt[i:i+1,:].T, 
+                        #         c='blue', label='simulated-filtered')
                         ax.set_title(joints[i])
                 plt.setp(axs[-1, :], xlabel='Time (s)')
                 plt.setp(axs[:, 0], ylabel='(deg or m)')
