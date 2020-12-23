@@ -9,7 +9,7 @@ import copy
 
 # User settings
 run_options = [True, True, False, False, False, False, False, False, False, False]
-# run_options = [False, False, True, True, True, False, True, True, True, False]
+# run_options = [False, False, True, True, True, False, True, True, False, False]
 
 
 solveProblem = run_options[0]
@@ -23,7 +23,7 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["57"]
+cases = ["58"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 

@@ -1898,6 +1898,37 @@ def getSettings():
                 'w_activationDt': 1,
                 'w_forceDt': 1, 
                 'w_trackingTerm': 1000
+                },
+            '58': {
+                'subjectID' : '0',
+                'model': 'weldGT_lockedEP_scaled',
+                'trial': 'ABD01',
+                'tracking_data': 'imus',
+                'imus_toTrack': ['radius'],
+                'imu_directions_toTrack': ['x', 'y', 'z'],
+                'track_imus_frame': 'groundFrame',
+                'track_orientations': True,
+                'timeInterval': [3, 9.5],                
+                'N': 650,
+                'filter_coordinates_toTrack': True,
+                'guess_zeroVelocity': True,
+                'guess_zeroAcceleration': True,
+                'guessType': "dataDriven",
+                'velocity_correction': True,
+                'constraint_pos': True,
+                'constraint_vel': True,
+                'constraint_acc': False,
+                'referenceIMUResultsCase': 'Case_48',
+                'actuation': 'torque-driven',
+                'conservative_bounds': False,
+                
+                
+                'w_jointAccTerm': 100,
+                'w_actuationTerm': 1,
+                'w_gtJETerm': 1,
+                'w_lambdaTerm': 1,
+                'w_gammaTerm': 1,   
+                'w_trackingTerm': 1000
                 }
                 }
     return settings
