@@ -2011,7 +2011,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
-                'referenceIMUResultsCase': 'Case_48',
+                'referenceIMUResultsCase': 'Case_41',
                 'actuation': 'torque-driven',
                 'conservative_bounds': False,
                 
@@ -2042,7 +2042,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
-                'referenceIMUResultsCase': 'Case_48',
+                'referenceIMUResultsCase': 'Case_41',
                 'actuation': 'torque-driven',
                 'conservative_bounds': False,
                 
@@ -2073,7 +2073,7 @@ def getSettings():
                 'constraint_pos': True,
                 'constraint_vel': True,
                 'constraint_acc': False,
-                'referenceIMUResultsCase': 'Case_48',
+                'referenceIMUResultsCase': 'Case_41',
                 'actuation': 'torque-driven',
                 'conservative_bounds': False,
                 
