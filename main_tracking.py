@@ -8,8 +8,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, False, False, False, False, False, False, False, False]
-run_options = [False, False, True, True, True, False, True, True, False, True]
+run_options = [True, True, False, False, False, False, False, False, False, False]
+# run_options = [False, False, True, True, True, False, True, True, False, True]
 
 
 solveProblem = run_options[0]
@@ -23,7 +23,7 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["63"]
+cases = ["65"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
@@ -226,6 +226,8 @@ for case in cases:
         joints.remove('elbow_flexion')
         joints.remove('pro_sup')        
     NJoints = len(joints)
+    idx_scapula_elevation = joints.index('scapula_elevation')
+    idx_scapula_upward_rot = joints.index('scapula_upward_rot')
     # This isn't great but to make things simpler with locked elbow flexion
     # and pro_sup angles, we pass constant values to F (Qs, Qdots, Qdotdots).
     # Ideally, we should work with constraints but let's not worry about that
@@ -292,7 +294,11 @@ for case in cases:
         actJoints.remove(groundThoraxJoint)
     idxActJoints = getJointIndices(joints, actJoints)
     NActJoints = len(actJoints)
-        
+    
+    # %% Kinematic coupling
+    from functionCasADi import getKinematicCouplingMatrix
+    f_kinematicCouplingMatrix = getKinematicCouplingMatrix(joints)
+           
     # %% Ideal torque motor dynamics
     from functionCasADi import torqueMotorDynamics
     f_actJointsDynamics = torqueMotorDynamics(NActJoints)
@@ -1551,15 +1557,20 @@ for case in cases:
             # Append collocation equations            
             # Skeleton dynamics (implicit formulation) 
             # Position derivatives
-            if velocity_correction:
-                g_eq.append((h*(Qdotskj_nsc[:, j+1] + qdotCorr_allj) - 
-                             Qsp_nsc) / scalingQs.to_numpy().T)
+            # Get qdot following: qdot = N(q)u
+            theta = ca.MX(2,1)
+            theta[0,0] = Qskj_nsc[idx_scapula_elevation,j+1]
+            theta[1,0] = Qskj_nsc[idx_scapula_upward_rot,j+1]
+            N_kinematic_coupling = f_kinematicCouplingMatrix(theta)      
+            Qdotsj_N = ca.mtimes(N_kinematic_coupling, Qdotskj_nsc[:, j+1]) 
+            if velocity_correction:                
+                g_eq.append((h*(Qdotsj_N + qdotCorr_allj) - Qsp_nsc) / 
+                            scalingQs.to_numpy().T)
             else:
-                g_eq.append((h*(Qdotskj_nsc[:, j+1]) - 
-                             Qsp_nsc) / scalingQs.to_numpy().T)
+                g_eq.append((h*(Qdotsj_N) - Qsp_nsc) / scalingQs.to_numpy().T)
             # Velocity derivatives
             g_eq.append((h*Qdotdotsj_nsc[:, j] - Qdotsp_nsc) / 
-                             scalingQdots.to_numpy().T)            
+                        scalingQdots.to_numpy().T)            
             # Actuation dynamics
             if actuation == 'muscle-driven':
                 # Muscle activation dynamics (implicit formulation)

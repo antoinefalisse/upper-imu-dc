@@ -430,6 +430,86 @@ def jointMechanicalWorkRate(NJoints):
     
     return f_jointMechanicalWorkRate    
 
+def getKinematicCouplingMatrix(joints):
+    '''
+    For ellipsoid mobilizers, qdot != u so we cannot impose dqdt = u (qdot) in
+    our set of dynamic constraints. Instead, qdot = N(q)u where N(q) is the
+    kinematic coupling matrix. For most mobilizers, N(q) is a diagonal matrix
+    but not for ellipsoid mobilizers. Here, we populate N(q) for our model. If
+    a coordinate named 'scapula_abduction' is detected, then an ellipsoid
+    mobilizer is involved and we take that into account when populating N(q).
+
+    Parameters
+    ----------
+    joints : list
+        List of coordinates in the model.
+
+    Returns
+    -------
+    f_kinematicCouplingMatrix : CasADi function.
+        Function that takes as input a vector of two elements, which are the
+        scapula_elevation and scapula_upward_rotation angles, and that returns
+        the kinematic coupling matrix N(q), which can be used to enforce
+        qdot = N(q)u in the set of dynamic constraints.        
+
+    '''
+    
+    # theta corresponds to the vector of scapula-fixed Euler angles;
+    # theta1: abduction, theta2: elevation, theta3: upward rotation.
+    # Since theta1 isn't used in N(q), theta has dim 2; theta[0] corresponds to
+    # theta2: elevation and theta[1] corresponds to theta3. See equation (7) in
+    # Seth et al. (2019).
+    theta = ca.SX.sym('theta', 2) 
+    N_ellipsoid = ca.SX(3, 3)
+    
+    N_ellipsoid[0,0] = ca.cos(theta[1]) / ca.cos(theta[0])
+    N_ellipsoid[0,1] = -ca.sin(theta[1]) / ca.cos(theta[0])
+    N_ellipsoid[0,2] = 0
+    
+    N_ellipsoid[1,0] = ca.sin(theta[1])
+    N_ellipsoid[1,1] = ca.cos(theta[1])
+    N_ellipsoid[1,2] = 0
+    
+    N_ellipsoid[2,0] = -ca.sin(theta[0]) * ca.cos(theta[1]) / ca.cos(theta[0]) 
+    N_ellipsoid[2,1] = ca.sin(theta[0]) * ca.sin(theta[1]) / ca.cos(theta[0]) 
+    N_ellipsoid[2,2] = 1
+    
+    nJoints = len(joints)    
+    # A sparse nJoints-by-nJoints matrix with ones on the diagonal.
+    N_all = ca.SX.eye(nJoints)
+    # If there is an ellipsoid mobilizer, then N(q) should be adjusted.
+    # TODO: We check if an ellipsoid mobilizer is involved by checking whether 
+    # the list of coodinates contains one named 'scapula_abduction'. This is 
+    # not super robust.      
+    if 'scapula_abduction' in joints:
+        idx_abd = joints.index('scapula_abduction')
+        N_all[idx_abd:idx_abd+3,idx_abd:idx_abd+3] = N_ellipsoid        
+        
+    f_kinematicCouplingMatrix = ca.Function(
+        'f_kinematicCouplingMatrix', [theta], [N_all], 
+        ['scapula_elevation and scapula_upward_rotation angles'], 
+        ['kinematic coupling matrix'])
+    
+    return f_kinematicCouplingMatrix    
+
+# Test f_kinematicCouplingMatrix
+# theta2 = 10*np.pi/180
+# theta3 = 20*np.pi/180    
+# theta_test = np.array([theta2,theta3])    
+# test = f_kinematicCouplingMatrix(theta_test).full()    
+# idx_scapAbd = joints.index('scapula_abduction')    
+# assert np.abs(test[idx_scapAbd, idx_scapAbd] - np.cos(theta3)/np.cos(theta2)) < 1e-10
+# assert np.abs(test[idx_scapAbd, idx_scapAbd+1] - -np.sin(theta3)/np.cos(theta2)) < 1e-10
+# assert np.abs(test[idx_scapAbd, idx_scapAbd+2] - 0) < 1e-10
+
+# assert np.abs(test[idx_scapAbd+1, idx_scapAbd] - np.sin(theta3)) < 1e-10
+# assert np.abs(test[idx_scapAbd+1, idx_scapAbd+1] - np.cos(theta3)) < 1e-10
+# assert np.abs(test[idx_scapAbd+1, idx_scapAbd+2] - 0) < 1e-10
+
+# assert np.abs(test[idx_scapAbd+2, idx_scapAbd] - -(np.sin(theta2)*np.cos(theta3))/np.cos(theta2)) < 1e-10
+# assert np.abs(test[idx_scapAbd+2, idx_scapAbd+1] - (np.sin(theta2)*np.sin(theta3))/np.cos(theta2)) < 1e-10
+# assert np.abs(test[idx_scapAbd+2, idx_scapAbd+2] - 1) < 1e-10
+
 # Test f_hillEquilibrium
 #import numpy as np
 #mtParametersT = np.array([[819, 573, 653],
