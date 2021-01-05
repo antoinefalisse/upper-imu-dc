@@ -9,7 +9,7 @@ import copy
 
 # User settings
 run_options = [True, True, False, False, False, False, False, False, False, False]
-# run_options = [False, False, True, True, True, False, True, True, False, True]
+# run_options = [False, False, True, True, True, False, True, True, True, True]
 
 
 solveProblem = run_options[0]
@@ -23,14 +23,14 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["67"]
+cases = ["68"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = False
+visualizeResultsAgainstBounds = True
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
 visualizeLengthApproximation = False
@@ -85,7 +85,14 @@ for case in cases:
     velocity_correction = settings[case]['velocity_correction']
     constraint_pos = settings[case]['constraint_pos']
     constraint_vel = settings[case]['constraint_vel']
-    constraint_acc = settings[case]['constraint_acc']
+    constraint_acc = settings[case]['constraint_acc']    
+    if constraint_acc:
+        # By default, the acceleration-level constraint errors are enforced to
+        # be 0. However, this makes convergence difficult. This allows relaxing
+        # this constraint.
+        constraint_acc_tol = np.NaN # Strictly enforced
+        if 'constraint_acc_tol' in settings[case]:
+            constraint_acc_tol = settings[case]['constraint_acc_tol']
     actuation = settings[case]['actuation']
     conservative_bounds = settings[case]['conservative_bounds']
     
@@ -1425,6 +1432,8 @@ for case in cases:
         if actuation == 'muscle-driven':
             g_ineq1 = []
             g_ineq2 = []
+        if constraint_acc and not np.isnan(constraint_acc_tol):
+            g_ineq3 = []
             
         #######################################################################
         #######################################################################
@@ -1649,7 +1658,21 @@ for case in cases:
                     
             ###################################################################                
             # Kinematics constraints.
-            g_eq.append(Tj[idxKinConstraints["applied"]])
+            # We may want to relax the acceleration-level constraint errors.
+            if ((not constraint_acc) or 
+                (constraint_acc and np.isnan(constraint_acc_tol))):
+                g_eq.append(Tj[idxKinConstraints["applied"]])
+            else:
+                # TODO: not super clean but the acceleration-level errors will
+                # always be the last NHolConstraints in the vector, so we can
+                # impose hard constraints on all but the last NHolConstraints
+                # and softer constraints on the last NHolConstraints.
+                # 1) Hard constraints on position- and velocity-level errors.
+                g_eq.append(
+                    Tj[idxKinConstraints["applied"][:-NHolConstraints]])
+                # 2) Soft constraints on acceleration-level constraints.
+                g_ineq3.append(
+                    Tj[idxKinConstraints["applied"][-NHolConstraints::]])
                 
         # End loop over collocation points
         #######################################################################
@@ -1664,107 +1687,100 @@ for case in cases:
         if actuation == 'muscle-driven':
             g_ineq1 = ca.vertcat(*g_ineq1)
             g_ineq2 = ca.vertcat(*g_ineq2)
+        if constraint_acc and not np.isnan(constraint_acc_tol):
+            g_ineq3 = ca.vertcat(*g_ineq3)
             
         #######################################################################
         # Create map construct (parallel computing)
-        # TODO: can simplify (in and out)
         if actuation == 'muscle-driven':
             if enableGroundThorax:
                 if velocity_correction:
                     if tracking_data == "coordinates":
-                        f_c = ca.Function(
-                            'f_c', [ak, aj, normFk, normFj, Qsk, Qsj,
-                                    Qdotsk, Qdotsj, aGTJk, aGTJj, 
-                                    aDtk, eGTJk, 
-                                    normFDtj, Qdotdotsj, lambdaj, gammaj],
-                            [g_eq, g_ineq1, g_ineq2, J])
+                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj, 
+                                  Qdotsk, Qdotsj, aGTJk, aGTJj, 
+                                  aDtk, eGTJk, 
+                                  normFDtj, Qdotdotsj, lambdaj, gammaj]
+                        f_c_out = [g_eq, g_ineq1, g_ineq2, J]
                     elif tracking_data == "imus":
-                        f_c = ca.Function(
-                            'f_c', [ak, aj, normFk, normFj, Qsk, Qsj,
-                                    Qdotsk, Qdotsj, aGTJk, aGTJj, 
-                                    aDtk, eGTJk, 
-                                    normFDtj, Qdotdotsj, lambdaj, gammaj],
-                            [g_eq, g_ineq1, g_ineq2, J, imuj]) 
+                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                  Qdotsk, Qdotsj, aGTJk, aGTJj, 
+                                  aDtk, eGTJk, 
+                                  normFDtj, Qdotdotsj, lambdaj, gammaj]
+                        f_c_out = [g_eq, g_ineq1, g_ineq2, J, imuj]
                 else:
                     if tracking_data == "coordinates":
-                        f_c = ca.Function(
-                            'f_c', [ak, aj, normFk, normFj, Qsk, Qsj,
-                                    Qdotsk, Qdotsj, aGTJk, aGTJj, 
-                                    aDtk, eGTJk, 
-                                    normFDtj, Qdotdotsj, lambdaj],
-                            [g_eq, g_ineq1, g_ineq2, J])   
+                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                  Qdotsk, Qdotsj, aGTJk, aGTJj, 
+                                  aDtk, eGTJk, 
+                                  normFDtj, Qdotdotsj, lambdaj]
+                        f_c_out = [g_eq, g_ineq1, g_ineq2, J]
             else:
                 if velocity_correction:
                     if tracking_data == "coordinates":
-                        f_c = ca.Function(
-                            'f_c', [ak, aj, normFk, normFj, Qsk, Qsj,
-                                    Qdotsk, Qdotsj, 
-                                    aDtk, 
-                                    normFDtj, Qdotdotsj, lambdaj, gammaj],
-                            [g_eq, g_ineq1, g_ineq2, J])
+                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                  Qdotsk, Qdotsj, 
+                                  aDtk, 
+                                  normFDtj, Qdotdotsj, lambdaj, gammaj]
+                        f_c_out = [g_eq, g_ineq1, g_ineq2, J]
                     elif tracking_data == "imus":
-                        f_c = ca.Function(
-                            'f_c', [ak, aj, normFk, normFj, Qsk, Qsj,
-                                    Qdotsk, Qdotsj, 
-                                    aDtk, 
-                                    normFDtj, Qdotdotsj, lambdaj, gammaj],
-                            [g_eq, g_ineq1, g_ineq2, J, imuj]) 
+                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                  Qdotsk, Qdotsj, 
+                                  aDtk, 
+                                  normFDtj, Qdotdotsj, lambdaj, gammaj]
+                        f_c_out = [g_eq, g_ineq1, g_ineq2, J, imuj]
                 else:
                     if tracking_data == "coordinates":
-                        f_c = ca.Function(
-                            'f_c', [ak, aj, normFk, normFj, Qsk, Qsj,
-                                    Qdotsk, Qdotsj, 
-                                    aDtk, 
-                                    normFDtj, Qdotdotsj, lambdaj],
-                            [g_eq, g_ineq1, g_ineq2, J])
-            
+                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                  Qdotsk, Qdotsj, 
+                                  aDtk, 
+                                  normFDtj, Qdotdotsj, lambdaj]
+                        f_c_out = [g_eq, g_ineq1, g_ineq2, J]            
         elif actuation == 'torque-driven':        
             if enableGroundThorax:
                 if velocity_correction:
                     if tracking_data == "coordinates":
-                        f_c = ca.Function(
-                            'f_c', [Qsk, Qsj, Qdotsk, Qdotsj,
-                                    aActJk, aActJj, aGTJk, aGTJj,
-                                    eActJk, eGTJk,
-                                    Qdotdotsj, lambdaj, gammaj],
-                            [g_eq, J])
+                        f_c_in = [Qsk, Qsj, Qdotsk, Qdotsj,
+                                  aActJk, aActJj, aGTJk, aGTJj,
+                                  eActJk, eGTJk,
+                                  Qdotdotsj, lambdaj, gammaj]
+                        f_c_out = [g_eq, J]
                     elif tracking_data == "imus":
-                        f_c = ca.Function(
-                            'f_c', [Qsk, Qsj, Qdotsk, Qdotsj,
-                                    aActJk, aActJj, aGTJk, aGTJj,
-                                    eActJk, eGTJk,
-                                    Qdotdotsj, lambdaj, gammaj],
-                            [g_eq, J, imuj]) 
+                        f_c_in = [Qsk, Qsj, Qdotsk, Qdotsj,
+                                  aActJk, aActJj, aGTJk, aGTJj,
+                                  eActJk, eGTJk,
+                                  Qdotdotsj, lambdaj, gammaj]
+                        f_c_out = [g_eq, J, imuj]
                 else:
                     if tracking_data == "coordinates":
-                        f_c = ca.Function(
-                            'f_c', [Qsk, Qsj, Qdotsk, Qdotsj,
-                                    aActJk, aActJj, aGTJk, aGTJj,
-                                    eActJk, eGTJk,
-                                    Qdotdotsj, lambdaj],
-                            [g_eq, J])   
+                        f_c_in = [Qsk, Qsj, Qdotsk, Qdotsj,
+                                  aActJk, aActJj, aGTJk, aGTJj,
+                                  eActJk, eGTJk,
+                                  Qdotdotsj, lambdaj]
+                        f_c_out = [g_eq, J]
             else:
                 if velocity_correction:
                     if tracking_data == "coordinates":
-                        f_c = ca.Function(
-                            'f_c', [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
-                                    eActJk,
-                                    Qdotdotsj, lambdaj, gammaj],
-                            [g_eq, J])
+                        f_c_in = [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
+                                  eActJk,
+                                  Qdotdotsj, lambdaj, gammaj]
+                        f_c_out = [g_eq, J]
                     elif tracking_data == "imus":
-                        f_c = ca.Function(
-                            'f_c', [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
-                                    eActJk,
-                                    Qdotdotsj, lambdaj, gammaj],
-                            [g_eq, J, imuj]) 
+                        f_c_in = [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
+                                  eActJk,
+                                  Qdotdotsj, lambdaj, gammaj]
+                        f_c_out = [g_eq, J, imuj]
                 else:
                     if tracking_data == "coordinates":
-                        f_c = ca.Function(
-                            'f_c', [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
-                                    eActJk,
-                                    Qdotdotsj, lambdaj],
-                            [g_eq, J])  
+                        f_c_in = [Qsk, Qsj, Qdotsk, Qdotsj, aActJk, aActJj,
+                                  eActJk,
+                                  Qdotdotsj, lambdaj]
+                        f_c_out = [g_eq, J]
                         
+        if constraint_acc and not np.isnan(constraint_acc_tol):
+            f_c_out.append(g_ineq3)  
+            idx_g_ineq3 = len(f_c_out) - 1
+                        
+        f_c = ca.Function('f_c', f_c_in, f_c_out)
         f_c_map = f_c.map(N, parallelMode, NThreads)  
         
         #######################################################################
@@ -1774,96 +1790,141 @@ for case in cases:
             if enableGroundThorax:
                 if velocity_correction:
                     if tracking_data == "coordinates":
-                        (c_g_eq, c_g_ineq1, c_g_ineq2, JPred) = (
-                            f_c_map(a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                    Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                    aGTJ[:, :-1], aGTJ_c,
-                                    aDt, eGTJ,
-                                    normFDt_c, Qdotdots_c, lambda_c, gamma_c))  
+                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                      aGTJ[:, :-1], aGTJ_c,
+                                      aDt, eGTJ,
+                                      normFDt_c, Qdotdots_c, lambda_c, gamma_c]
+                        f_c_map_out = f_c_map(*f_c_map_in) 
+                        c_g_eq = f_c_map_out[0]
+                        c_g_ineq1 = f_c_map_out[1]
+                        c_g_ineq2 = f_c_map_out[2]
+                        JPred = f_c_map_out[3] 
                     elif tracking_data == "imus":
-                        (c_g_eq, c_g_ineq1, c_g_ineq2, JPred, imu_s_nsc) = (
-                            f_c_map(a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                    Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                    aGTJ[:, :-1], aGTJ_c,
-                                    aDt, eGTJ,
-                                    normFDt_c, Qdotdots_c, lambda_c, gamma_c))                 
+                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                      aGTJ[:, :-1], aGTJ_c,
+                                      aDt, eGTJ,
+                                      normFDt_c, Qdotdots_c, lambda_c, gamma_c]
+                        f_c_map_out = f_c_map(*f_c_map_in) 
+                        c_g_eq = f_c_map_out[0]
+                        c_g_ineq1 = f_c_map_out[1]
+                        c_g_ineq2 = f_c_map_out[2]
+                        JPred = f_c_map_out[3] 
+                        imu_s_nsc = f_c_map_out[4]        
                 else:
                     if tracking_data == "coordinates":
-                        (c_g_eq, c_g_ineq1, c_g_ineq2, JPred) = (
-                            f_c_map(a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                    Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                    aGTJ[:, :-1], aGTJ_c,
-                                    aDt, eGTJ,
-                                    normFDt_c, Qdotdots_c, lambda_c))
+                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                      aGTJ[:, :-1], aGTJ_c,
+                                      aDt, eGTJ,
+                                      normFDt_c, Qdotdots_c, lambda_c]
+                        f_c_map_out = f_c_map(*f_c_map_in) 
+                        c_g_eq = f_c_map_out[0]
+                        c_g_ineq1 = f_c_map_out[1]
+                        c_g_ineq2 = f_c_map_out[2]
+                        JPred = f_c_map_out[3]
             else:
                 if velocity_correction:
                     if tracking_data == "coordinates":
-                        (c_g_eq, c_g_ineq1, c_g_ineq2, JPred) = (
-                            f_c_map(a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                    Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
-                                    aDt,
-                                    normFDt_c, Qdotdots_c, lambda_c, gamma_c))  
+                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
+                                      aDt,
+                                      normFDt_c, Qdotdots_c, lambda_c, gamma_c]
+                        f_c_map_out = f_c_map(*f_c_map_in)
+                        c_g_eq = f_c_map_out[0]
+                        c_g_ineq1 = f_c_map_out[1]
+                        c_g_ineq2 = f_c_map_out[2]
+                        JPred = f_c_map_out[3]
                     elif tracking_data == "imus":
-                        (c_g_eq, c_g_ineq1, c_g_ineq2, JPred, imu_s_nsc) = (
-                            f_c_map(a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                    Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
-                                    aDt,
-                                    normFDt_c, Qdotdots_c, lambda_c, gamma_c))                      
+                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
+                                      aDt,
+                                      normFDt_c, Qdotdots_c, lambda_c, gamma_c]
+                        f_c_map_out = f_c_map(*f_c_map_in)
+                        c_g_eq = f_c_map_out[0]
+                        c_g_ineq1 = f_c_map_out[1]
+                        c_g_ineq2 = f_c_map_out[2]
+                        JPred = f_c_map_out[3] 
+                        imu_s_nsc = f_c_map_out[4]                   
                 else:
                     if tracking_data == "coordinates":
-                        (c_g_eq, c_g_ineq1, c_g_ineq2, JPred) = (
-                            f_c_map(a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                    Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
-                                    aDt,
-                                    normFDt_c, Qdotdots_c, lambda_c))  
+                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
+                                      aDt,
+                                      normFDt_c, Qdotdots_c, lambda_c]
+                        f_c_map_out = f_c_map(*f_c_map_in)
+                        c_g_eq = f_c_map_out[0]
+                        c_g_ineq1 = f_c_map_out[1]
+                        c_g_ineq2 = f_c_map_out[2]
+                        JPred = f_c_map_out[3] 
         elif actuation == 'torque-driven':
             if enableGroundThorax:
                 if velocity_correction:
                     if tracking_data == "coordinates":
-                        (c_g_eq, JPred) = (
-                            f_c_map(Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                    aActJ[:, :-1], aActJ_c, aGTJ[:, :-1],
-                                    aGTJ_c, eActJ, eGTJ, Qdotdots_c, lambda_c,
-                                    gamma_c))  
+                        f_c_map_in = [Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                      aActJ[:, :-1], aActJ_c, aGTJ[:, :-1],
+                                      aGTJ_c, eActJ, eGTJ, Qdotdots_c,
+                                      lambda_c, gamma_c]
+                        f_c_map_out = f_c_map(*f_c_map_in)
+                        c_g_eq = f_c_map_out[0]
+                        JPred = f_c_map_out[1] 
                     elif tracking_data == "imus":
-                        (c_g_eq, JPred, imu_s_nsc) = (
-                            f_c_map(Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                    aActJ[:, :-1], aActJ_c, aGTJ[:, :-1],
-                                    aGTJ_c, eActJ, eGTJ, Qdotdots_c, lambda_c,
-                                    gamma_c))                      
+                        f_c_map_in = [Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                      aActJ[:, :-1], aActJ_c, aGTJ[:, :-1],
+                                      aGTJ_c, eActJ, eGTJ, Qdotdots_c,
+                                      lambda_c, gamma_c]
+                        f_c_map_out = f_c_map(*f_c_map_in)
+                        c_g_eq = f_c_map_out[0]
+                        JPred = f_c_map_out[1] 
+                        imu_s_nsc = f_c_map_out[2]                    
                 else:
                     if tracking_data == "coordinates":
-                        (c_g_eq, JPred) = (
-                            f_c_map(Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                    aActJ[:, :-1], aActJ_c, aGTJ[:, :-1],
-                                    aGTJ_c, eActJ, eGTJ, Qdotdots_c,
-                                    lambda_c))
+                        f_c_map_in = [Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                      aActJ[:, :-1], aActJ_c, aGTJ[:, :-1],
+                                      aGTJ_c, eActJ, eGTJ, Qdotdots_c,
+                                      lambda_c]
+                        f_c_map_out = f_c_map(*f_c_map_in)
+                        c_g_eq = f_c_map_out[0]
+                        JPred = f_c_map_out[1]
             else:
                 if velocity_correction:
                     if tracking_data == "coordinates":
-                        (c_g_eq, JPred) = (
-                            f_c_map(Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                    aActJ[:, :-1], aActJ_c,
-                                    eActJ,
-                                    Qdotdots_c, lambda_c, gamma_c))  
+                        f_c_map_in = [Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                      aActJ[:, :-1], aActJ_c,
+                                      eActJ,
+                                      Qdotdots_c, lambda_c, gamma_c]
+                        f_c_map_out = f_c_map(*f_c_map_in)
+                        c_g_eq = f_c_map_out[0]
+                        JPred = f_c_map_out[1]
                     elif tracking_data == "imus":
-                        (c_g_eq, JPred, imu_s_nsc) = (
-                            f_c_map(Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                    aActJ[:, :-1], aActJ_c,
-                                    eActJ,
-                                    Qdotdots_c, lambda_c, gamma_c))                      
+                        f_c_map_in = [Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                      aActJ[:, :-1], aActJ_c,
+                                      eActJ,
+                                      Qdotdots_c, lambda_c, gamma_c]
+                        f_c_map_out = f_c_map(*f_c_map_in)
+                        c_g_eq = f_c_map_out[0]
+                        JPred = f_c_map_out[1] 
+                        imu_s_nsc = f_c_map_out[2]                      
                 else:
                     if tracking_data == "coordinates":
-                        (c_g_eq, JPred) = (
-                            f_c_map(Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                    aActJ[:, :-1], aActJ_c,
-                                    eActJ,
-                                    Qdotdots_c, lambda_c))
+                        f_c_map_in = [Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                      aActJ[:, :-1], aActJ_c,
+                                      eActJ,
+                                      Qdotdots_c, lambda_c]
+                        f_c_map_out = f_c_map(*f_c_map_in)
+                        c_g_eq = f_c_map_out[0]
+                        JPred = f_c_map_out[1]
                 
         opti.subject_to(ca.vec(c_g_eq) == 0)
         if actuation == 'muscle-driven':
             opti.subject_to(ca.vec(c_g_ineq1) >= 0)
-            opti.subject_to(ca.vec(c_g_ineq2) <= 1 / activationTimeConstant)  
+            opti.subject_to(ca.vec(c_g_ineq2) <= 1 / activationTimeConstant) 
+        if constraint_acc and not np.isnan(constraint_acc_tol):
+            c_g_ineq3 = f_c_map_out[idx_g_ineq3]  
+            opti.subject_to(opti.bounded(-constraint_acc_tol,
+                                         ca.vec(c_g_ineq3),
+                                         constraint_acc_tol))
                 
         #######################################################################
         # Equality / continuity constraints
