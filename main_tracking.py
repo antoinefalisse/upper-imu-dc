@@ -8,8 +8,8 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, False, False, False, False, False, False, False, False]
-# run_options = [False, False, True, True, True, False, True, True, True, True]
+# run_options = [True, True, False, False, False, False, False, False, False, False]
+run_options = [False, False, True, True, True, False, True, True, True, True]
 
 
 solveProblem = run_options[0]
