@@ -8,8 +8,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, False, False, False, False, False, False, False, False]
-run_options = [False, False, True, True, True, False, True, True, True, True]
+run_options = [True, True, False, False, False, False, False, False, False, False]
+# run_options = [False, False, True, True, True, False, True, True, True, True]
 
 
 solveProblem = run_options[0]
@@ -23,9 +23,9 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["71"]
+cases = ["72"]
 
-runTrainingDataPolyApp = False
+runTrainingDataPolyApp = True
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
@@ -94,7 +94,11 @@ for case in cases:
         if 'constraint_acc_tol' in settings[case]:
             constraint_acc_tol = settings[case]['constraint_acc_tol']
     actuation = settings[case]['actuation']
-    conservative_bounds = settings[case]['conservative_bounds']
+    
+    if "type_bounds" in settings[case]:
+        type_bounds = settings[case]['type_bounds']
+    else:
+        type_bounds = "regular"
     
     norm_std = False
     TrCoordinates_toTrack_Bool = False  
@@ -350,8 +354,8 @@ for case in cases:
         idxPolynomialJoints = getJointIndices(joints, polynomialJoints)
         os.chdir(pathExternalFunctions)
         F_getPolyApp = ca.external('f_getPolyApp', prefixF + subject[0] + 
-                                   subject[-1] + '_getPolyApp' + 
-                                   suffix_F_poly + '.dll')
+                                    subject[-1] + '_getPolyApp' + 
+                                    suffix_F_poly + '.dll')
         os.chdir(pathMain) 
         
         # Spanning info        
@@ -727,9 +731,11 @@ for case in cases:
         uBActJAj = ca.vec(uBActJA.to_numpy().T * np.ones((1, d*N))).full()
         lBActJAj = ca.vec(lBActJA.to_numpy().T * np.ones((1, d*N))).full()
     
-    if conservative_bounds:
+    if type_bounds == "conservative":
         uBQs, lBQs, scalingQs = bounds.getBoundsPositionConservative()
-    else:        
+    elif type_bounds == "physiological":
+        uBQs, lBQs, scalingQs = bounds.getBoundsPositionPhysiological()
+    elif type_bounds == "regular":        
         uBQs, lBQs, scalingQs = bounds.getBoundsPosition()    
     uBQsk = ca.vec(uBQs.to_numpy().T * np.ones((1, N+1))).full()
     lBQsk = ca.vec(lBQs.to_numpy().T * np.ones((1, N+1))).full()
@@ -845,21 +851,22 @@ for case in cases:
         from getTrainingDataPolyApp import getInputsMA    
         # number of smapling point between (including) upper and lower bounds).
         # The number of samples = nNodes^nDim where nDim=NPolynomialJoints
-        nNodes = 3 
+        nNodes = 4
         OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
         inputs_MA = getInputsMA(pathMA, uBQs_nsc, lBQs_nsc, polynomialJoints,
                                 nNodes, OpenSimDict)
         # run MA in parallel
         from getTrainingDataPolyApp import MA_parallel
         from joblib import Parallel, delayed  
-        useMultiProcessing = False
+        useMultiProcessing = True
         if __name__ == "__main__":
             if useMultiProcessing:
                 Njobs = NThreads
             else:
                 Njobs = 1
             Parallel(n_jobs=Njobs)(delayed(MA_parallel)(inputs_MA[i]) 
-                                   for i in inputs_MA) 
+                                    for i in inputs_MA) 
+        break # stop main loop
     
     # %% Guesses and scaling   
     Qs_fromIK_filt_interp = interpolateDataFrame(

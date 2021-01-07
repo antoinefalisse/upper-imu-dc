@@ -139,6 +139,9 @@ def getInputsMA(pathMuscleAnalysis, ubounds, lbounds, joints, nNodes,
                                   '\subject01_MuscleAnalysis_Length.')
         inputs_MA[i]["clean2"] = (inputs_MA[i]["pathResultsSplinesCase"] + 
                                   '\subject01_MuscleAnalysis_MomentArm')
+        inputs_MA[i]["clean3"] = (inputs_MA[i]["pathResultsSplinesCase"] + 
+                                  '\subject01_Kinematics_q')
+        inputs_MA[i]["pathResultsMA"] = pathResultsMA
         
     return inputs_MA    
     
@@ -186,13 +189,14 @@ def MA_parallel(inputs_MA):
     ATool.setCoordinatesFileName(inputs_MA["setCoordinatesFileName"])
     ATool.printToXML(inputs_MA["pathSetup"])   
     # # ATool.run()
-    # command = 'opensim-cmd' + ' run-tool ' + inputs_MA["pathSetup"]
-    # os.system(command)
-    # # Delete unused files (all but lengths and moment arms)
-    # for CleanUp in glob.glob(inputs_MA["pathResultsSplinesCase"] + '/*.*'):
-    #     if ((not CleanUp.startswith(inputs_MA["clean1"])) and 
-    #         (not CleanUp.startswith(inputs_MA["clean2"]))):    
-    #         os.remove(CleanUp)
+    command = 'opensim-cmd' + ' run-tool ' + inputs_MA["pathSetup"]
+    os.system(command)
+    # Delete unused files (all but lengths and moment arms)
+    for CleanUp in glob.glob(inputs_MA["pathResultsSplinesCase"] + '/*.*'):
+        if ((not CleanUp.startswith(inputs_MA["clean1"])) and 
+            (not CleanUp.startswith(inputs_MA["clean2"])) and
+            (not CleanUp.startswith(inputs_MA["clean3"]))):    
+            os.remove(CleanUp)
      
     # # Get MT-length
     # for i in chunkData:
@@ -223,4 +227,33 @@ def MA_parallel(inputs_MA):
                 
     # return lmt_all
     # '''
+    
+def getTrainingData(inputs_MA, muscles):
+    from variousFunctions import getFromStorage
+    lmt = {}
+    for key in inputs_MA:
+        # Get MT-length        
+        pathLMT = os.path.join(inputs_MA[key]["pathResultsSplinesCase"], 
+                               'subject01_MuscleAnalysis_Length.sto')
+        lmt[key] = getFromStorage(pathLMT, muscles).to_numpy()             
+        
+        
+    # Reconstruct full matrix (multiple chunks)
+    lmt_all = {}
+    lmt_all["labels"] = ["time"] + muscles
+    lmt_all["data"] = lmt["0"]
+    if len(inputs_MA) > 1:
+        for key in inputs_MA:
+            if not key == "0":
+                lmt_all["data"] = np.concatenate(
+                    (lmt_all["data"], lmt[key]), axis=0)
+    from variousFunctions import numpy2storage    
+
+    pathResultsFolder = os.path.join(inputs_MA["0"]["pathResultsMA"], "all")
+    pathResultsLMTAll = os.path.join(pathResultsFolder, 
+                                     "MuscleAnalysis_Length.sto")
+    if not os.path.exists(pathResultsFolder):
+        os.makedirs(pathResultsFolder) 
+    
+    numpy2storage(lmt_all["labels"], lmt_all["data"], pathResultsLMTAll)
                     

@@ -1,4 +1,3 @@
-import scipy.interpolate as interpolate
 import pandas as pd
 import numpy as np
 
@@ -129,6 +128,86 @@ class bounds:
         lowerBoundsPosition_all['axial_rot'] = [-38 * np.pi / 180]
         lowerBoundsPosition_all['elbow_flexion'] = [-20 * np.pi / 180]
         lowerBoundsPosition_all['pro_sup'] = [10 * np.pi / 180]
+        
+        # Rotational joints
+        # The goal is to use the same scaling for each joint
+        max_rotationalJoints = np.zeros(len(self.rotationalJoints))
+        for count, rotationalJoint in enumerate(self.rotationalJoints): 
+            max_rotationalJoints[count] = pd.concat(
+                    [abs(upperBoundsPosition_all[rotationalJoint]),
+                     abs(lowerBoundsPosition_all[rotationalJoint])]).max(level=0)[0]
+        maxAll_rotationalJoints = np.max(max_rotationalJoints)      
+            
+        # Translational joints
+        # The goal is to use the same scaling for each joint
+        if self.translationalJoints:
+            max_translationalJoints = np.zeros(len(self.translationalJoints))
+            for count, translationalJoint in enumerate(self.translationalJoints): 
+                max_translationalJoints[count] = pd.concat(
+                        [abs(upperBoundsPosition_all[translationalJoint]),
+                         abs(lowerBoundsPosition_all[translationalJoint])]).max(level=0)[0]
+            maxAll_translationalJoints = np.max(max_translationalJoints)   
+        
+        upperBoundsPosition = pd.DataFrame()   
+        lowerBoundsPosition = pd.DataFrame()
+        scalingPosition = pd.DataFrame() 
+        
+        for count, joint in enumerate(self.joints):         
+            # Scaling            
+            if joint in self.rotationalJoints:
+                scalingPosition.insert(count, joint, [maxAll_rotationalJoints])
+            elif joint in self.translationalJoints:
+                scalingPosition.insert(count, joint, [maxAll_translationalJoints])
+            else:
+                 raise ValueError('Unknown joint')
+            upperBoundsPosition.insert(
+                 count, joint, [upperBoundsPosition_all.iloc[0][joint] / 
+                                scalingPosition.iloc[0][joint]])
+            lowerBoundsPosition.insert(
+                 count, joint, [lowerBoundsPosition_all.iloc[0][joint] / 
+                                scalingPosition.iloc[0][joint]])
+                
+        return upperBoundsPosition, lowerBoundsPosition, scalingPosition
+    
+    def getBoundsPositionPhysiological(self):
+        upperBoundsPosition_all = pd.DataFrame()   
+        lowerBoundsPosition_all = pd.DataFrame() 
+        
+        upperBoundsPosition_all['ground_thorax_rot_x'] = [20 * np.pi / 180]
+        upperBoundsPosition_all['ground_thorax_rot_y'] = [20 * np.pi / 180]
+        upperBoundsPosition_all['ground_thorax_rot_z'] = [10 * np.pi / 180]
+        upperBoundsPosition_all['ground_thorax_tx'] = [1]
+        upperBoundsPosition_all['ground_thorax_ty'] = [1]
+        upperBoundsPosition_all['ground_thorax_tz'] = [1]        
+        upperBoundsPosition_all['clav_prot'] = [-15 * np.pi / 180]
+        upperBoundsPosition_all['clav_elev'] = [20 * np.pi / 180]
+        upperBoundsPosition_all['scapula_abduction'] = [15 * np.pi / 180]
+        upperBoundsPosition_all['scapula_elevation'] = [10 * np.pi / 180]
+        upperBoundsPosition_all['scapula_upward_rot'] = [90 * np.pi / 180]
+        upperBoundsPosition_all['scapula_winging'] = [10 * np.pi / 180]        
+        upperBoundsPosition_all['plane_elv'] = [90 * np.pi / 180]
+        upperBoundsPosition_all['shoulder_elv'] = [100 * np.pi / 180]
+        upperBoundsPosition_all['axial_rot'] = [90 * np.pi / 180]
+        upperBoundsPosition_all['elbow_flexion'] = [130 * np.pi / 180]
+        upperBoundsPosition_all['pro_sup'] = [70 * np.pi / 180]
+        
+        lowerBoundsPosition_all['ground_thorax_rot_x'] = [-20 * np.pi / 180]
+        lowerBoundsPosition_all['ground_thorax_rot_y'] = [-30 * np.pi / 180]
+        lowerBoundsPosition_all['ground_thorax_rot_z'] = [-30 * np.pi / 180]
+        lowerBoundsPosition_all['ground_thorax_tx'] = [-1]
+        lowerBoundsPosition_all['ground_thorax_ty'] = [-1]
+        lowerBoundsPosition_all['ground_thorax_tz'] = [-1]        
+        lowerBoundsPosition_all['clav_prot'] = [-50 * np.pi / 180]
+        lowerBoundsPosition_all['clav_elev'] = [-10 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_abduction'] = [-40 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_elevation'] = [-10 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_upward_rot'] = [0 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_winging'] = [-20 * np.pi / 180]        
+        lowerBoundsPosition_all['plane_elv'] = [-90 * np.pi / 180]
+        lowerBoundsPosition_all['shoulder_elv'] = [-10 * np.pi / 180]
+        lowerBoundsPosition_all['axial_rot'] = [-90 * np.pi / 180]
+        lowerBoundsPosition_all['elbow_flexion'] = [0 * np.pi / 180]
+        lowerBoundsPosition_all['pro_sup'] = [-70 * np.pi / 180]
         
         # Rotational joints
         # The goal is to use the same scaling for each joint
