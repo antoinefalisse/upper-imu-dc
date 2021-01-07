@@ -219,7 +219,7 @@ for case in cases:
         
     # Time constants
     activationTimeConstant = 0.015
-    deactivationTimeConstant = 0.06    
+    deactivationTimeConstant = 0.06        
     
     # %% Joints
     from variousFunctions import getJointIndices
@@ -304,7 +304,7 @@ for case in cases:
     for groundThoraxJoint in groundThoraxJoints:
         actJoints.remove(groundThoraxJoint)
     idxActJoints = getJointIndices(joints, actJoints)
-    NActJoints = len(actJoints)
+    NActJoints = len(actJoints)    
     
     # %% Kinematic coupling
     # TODO: the matrix reported in Seth et al. (2016) does not seem to
@@ -363,11 +363,11 @@ for case in cases:
         idxSpanningJoints = getSpanningInfo(pathDummyMotion, 
                                             pathMATrainingMotion,
                                             polynomialJoints, muscles)   
-        # Temporary: used to inform getBoundsPositionConservative()
-        from splines import getROM
-        minima, maxima = getROM(pathMA, polynomialJoints)        
-        minima_ext = np.floor(minima)
-        maxima_ext = np.ceil(maxima)
+        # # Temporary: used to inform getBoundsPositionConservative()
+        # from splines import getROM
+        # minima, maxima = getROM(pathMA, polynomialJoints)        
+        # minima_ext = np.floor(minima)
+        # maxima_ext = np.ceil(maxima)
     
     # %% Damping torques
     from functionCasADi import dampingTorque
@@ -850,7 +850,7 @@ for case in cases:
         from getTrainingDataPolyApp import getInputsMA    
         # number of smapling point between (including) upper and lower bounds).
         # The number of samples = nNodes^nDim where nDim=NPolynomialJoints
-        nNodes = 4
+        nNodes = 2
         OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
         inputs_MA = getInputsMA(pathMA, uBQs_nsc, lBQs_nsc, polynomialJoints,
                                 nNodes, OpenSimDict)
