@@ -841,11 +841,10 @@ for case in cases:
 #         lBOffsetk = lBOffset.to_numpy()
 
     # %% Generate training data for polynomial approximation.
-    # THIS MAKES NO SENSE: poses are completely unphysiological - MA fails.
     if (runTrainingDataPolyApp and actuation == 'muscle-driven' and 
         muscle_approximation == 'multi-dim-poly'):
         # This comes here, because it relies on the bounds to create a 
-        # uniform grid of training poses. TODO not all poses are physiological.        
+        # uniform grid of training poses.   
         uBQs_nsc = uBQs.mul(scalingQs,axis='columns')
         lBQs_nsc = lBQs.mul(scalingQs,axis='columns')    
         from getTrainingDataPolyApp import getInputsMA    
@@ -855,17 +854,21 @@ for case in cases:
         OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
         inputs_MA = getInputsMA(pathMA, uBQs_nsc, lBQs_nsc, polynomialJoints,
                                 nNodes, OpenSimDict)
-        # run MA in parallel
-        from getTrainingDataPolyApp import MA_parallel
-        from joblib import Parallel, delayed  
-        useMultiProcessing = True
-        if __name__ == "__main__":
-            if useMultiProcessing:
-                Njobs = NThreads
-            else:
-                Njobs = 1
-            Parallel(n_jobs=Njobs)(delayed(MA_parallel)(inputs_MA[i]) 
-                                    for i in inputs_MA) 
+        # # run MA in parallel
+        # from getTrainingDataPolyApp import MA_parallel
+        # from joblib import Parallel, delayed  
+        # useMultiProcessing = True
+        # if __name__ == "__main__":
+        #     if useMultiProcessing:
+        #         Njobs = NThreads
+        #     else:
+        #         Njobs = 1
+        #     Parallel(n_jobs=Njobs)(delayed(MA_parallel)(inputs_MA[i]) 
+        #                             for i in inputs_MA) 
+        
+        from getTrainingDataPolyApp import generateTrainingData 
+        generateTrainingData(inputs_MA, polynomialJoints, muscles)
+        
         break # stop main loop
     
     # %% Guesses and scaling   

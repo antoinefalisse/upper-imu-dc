@@ -228,32 +228,71 @@ def MA_parallel(inputs_MA):
     # return lmt_all
     # '''
     
-def getTrainingData(inputs_MA, muscles):
+def generateTrainingData(inputs_MA, joints, muscles):
     from variousFunctions import getFromStorage
+    from variousFunctions import numpy2storage
+    pathResultsFolder = os.path.join(inputs_MA["0"]["pathResultsMA"], "all")    
+    if not os.path.exists(pathResultsFolder):
+        os.makedirs(pathResultsFolder) 
+    
     lmt = {}
-    for key in inputs_MA:
-        # Get MT-length        
+    ma = {}
+    q = {}
+    for key in inputs_MA:     
         pathLMT = os.path.join(inputs_MA[key]["pathResultsSplinesCase"], 
                                'subject01_MuscleAnalysis_Length.sto')
-        lmt[key] = getFromStorage(pathLMT, muscles).to_numpy()             
-        
-        
-    # Reconstruct full matrix (multiple chunks)
+        lmt[key] = getFromStorage(pathLMT, muscles).to_numpy()  
+        pathQ = os.path.join(inputs_MA[key]["pathResultsSplinesCase"], 
+                             'subject01_Kinematics_q.sto')
+        q[key] = getFromStorage(pathQ, joints).to_numpy()
+        ma[key] = {}
+        for joint in joints:
+            pathMA = os.path.join(inputs_MA[key]["pathResultsSplinesCase"], 
+                                  'subject01_MuscleAnalysis_MomentArm_' + 
+                                  joint + '.sto')            
+            ma[key][joint] = getFromStorage(pathMA, muscles).to_numpy()  
+            
+            
+    # Reconstruct full matrices (multiple chunks)
     lmt_all = {}
     lmt_all["labels"] = ["time"] + muscles
     lmt_all["data"] = lmt["0"]
+    
+    q_all = {}
+    q_all["labels"] = ["time"] + joints
+    q_all["data"] = q["0"]
+    
+    ma_all = {}
+    ma_all["labels"] = ["time"] + muscles
+    ma_all["data"] = {}
+    for joint in joints:
+        ma_all["data"][joint] = ma["0"][joint]
+    
     if len(inputs_MA) > 1:
         for key in inputs_MA:
             if not key == "0":
                 lmt_all["data"] = np.concatenate(
-                    (lmt_all["data"], lmt[key]), axis=0)
-    from variousFunctions import numpy2storage    
-
-    pathResultsFolder = os.path.join(inputs_MA["0"]["pathResultsMA"], "all")
+                    (lmt_all["data"], lmt[key]), axis=0)  
+                
+                q_all["data"] = np.concatenate(
+                    (q_all["data"], q[key]), axis=0) 
+                
+                for joint in joints:
+                    ma_all["data"][joint] = np.concatenate(
+                        (ma_all["data"][joint], ma[key][joint]), axis=0)
+                
+    # Print files
+    # TODO: save npy rather than print files
     pathResultsLMTAll = os.path.join(pathResultsFolder, 
-                                     "MuscleAnalysis_Length.sto")
-    if not os.path.exists(pathResultsFolder):
-        os.makedirs(pathResultsFolder) 
-    
+                                     "subject01_MuscleAnalysis_Length.sto")
     numpy2storage(lmt_all["labels"], lmt_all["data"], pathResultsLMTAll)
+    pathResultsQAll = os.path.join(pathResultsFolder, "training_q.mot")
+    numpy2storage(q_all["labels"], q_all["data"], pathResultsQAll)
+    
+    for joint in joints:
+        pathResultsMAAll = os.path.join(pathResultsFolder, 
+                                        "subject01_MuscleAnalysis_MomentArm_" 
+                                        + joint + ".sto")
+        numpy2storage(ma_all["labels"], ma_all["data"][joint],
+                      pathResultsMAAll) 
                     

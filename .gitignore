@@ -3,3 +3,6 @@ __pycache__/
 
 subject01_MuscleAnalysis*.sto
 subject01_Kinematics*.sto
+angles*.mot
+angles*.xml
+training_q*.mot
