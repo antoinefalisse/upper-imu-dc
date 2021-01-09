@@ -73,27 +73,23 @@ spanning(spanning<=0.0001 & spanning>=-0.0001) = 0;
 spanning(spanning~=0) = 1;
 
 for m = 1:length(muscles)
-    if m ~= 8
-        metaData = struct('sMuscle',[]);
-        metaData.sMuscle = muscles{m};
-        idxSpanning = find(spanning(m,:) == 1);
-        metaData_temp = struct('nDOF',[]);
-        for c = 1:sum(spanning(m,:))
-           metaData.sDOFlist{c} = coordinates{idxSpanning(c)};        
-           metaData_temp.nDOF(:,c) = coordinate_values.data(:,strcmp(coordinate_values.colheaders, coordinates{idxSpanning(c)}))*pi/180;
-
-           metaData_temp.nMomArm(:,c) = MuscleData.dM(:,m,idxSpanning(c));       
-    %        metaData_temp.nMomArm(:,c) = MA.([coordinates{idxSpanning(c)}]).data(:,strcmp(MA.([coordinates{idxSpanning(c)}]).colheaders, muscles{m}));
-        end
-        % Numerical error
-        metaData_temp.nDOF(abs(metaData_temp.nDOF)<1e-8)=0;
-        % We round to 3 decimals to account for tiny differences in angles 
-        % thatshould not matter.
-        [metaData.nDOF, IA, ~] = unique(round(metaData_temp.nDOF,3), 'rows', 'stable');
-        metaData.nMomArm = metaData_temp.nMomArm(IA, :);
-        metaData.nLength = lMT.data(IA,strcmp(lMT.colheaders, muscles{m})); 
-        save([folderNameTrainingData, '/all/', muscles{m},'MomentArm'], 'metaData')
+    metaData = struct('sMuscle',[]);
+    metaData.sMuscle = muscles{m};
+    idxSpanning = find(spanning(m,:) == 1);
+    metaData_temp = struct('nDOF',[]);
+    for c = 1:sum(spanning(m,:))
+       metaData.sDOFlist{c} = coordinates{idxSpanning(c)};        
+       metaData_temp.nDOF(:,c) = coordinate_values.data(:,strcmp(coordinate_values.colheaders, coordinates{idxSpanning(c)}))*pi/180;
+       metaData_temp.nMomArm(:,c) = MuscleData.dM(:,m,idxSpanning(c));       
     end
+    % Numerical error
+    metaData_temp.nDOF(abs(metaData_temp.nDOF)<1e-8)=0;
+    % We round to 3 decimals to account for tiny differences in angles 
+    % thatshould not matter.
+    [metaData.nDOF, IA, ~] = unique(round(metaData_temp.nDOF,3), 'rows', 'stable');
+    metaData.nMomArm = metaData_temp.nMomArm(IA, :);
+    metaData.nLength = MuscleData.lMT(IA,m); 
+    save([folderNameTrainingData, '/all/', muscles{m},'MomentArm'], 'metaData')
 end
 
 %% Get info to fill out .csv files
