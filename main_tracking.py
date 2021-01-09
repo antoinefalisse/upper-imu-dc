@@ -38,7 +38,7 @@ visualizeLengthApproximation = False
 # Numerical Settings
 tol = 4
 d = 3
-NThreads = 8
+NThreads = 25
 parallelMode = "thread"
 
 from settings import getSettings     
@@ -850,9 +850,30 @@ for case in cases:
         from getTrainingDataPolyApp import getInputsMA    
         # number of smapling point between (including) upper and lower bounds).
         # The number of samples = nNodes^nDim where nDim=NPolynomialJoints
-        nNodes = 2
+        nNodes = 9        
+        maJoints = ['clav_prot', 'clav_elev', 'scapula_abduction', 
+                    'scapula_elevation', 'scapula_upward_rot', 
+                    'scapula_winging', 'plane_elv', 'shoulder_elv', 
+                    'axial_rot', 'elbow_flexion', 'pro_sup']         
+        if not enableElbowProSup:
+            maJoints.remove('plane_elv')
+            maJoints.remove('shoulder_elv') 
+            maJoints.remove('axial_rot')
+            maJoints.remove('elbow_flexion')
+            maJoints.remove('pro_sup') 
+            
+        # if not enableElbowProSup:
+        #     maJoints.remove('clav_prot')
+        #     maJoints.remove('clav_elev') 
+        #     maJoints.remove('scapula_abduction')
+        #     maJoints.remove('scapula_elevation')
+        #     maJoints.remove('scapula_upward_rot') 
+        #     maJoints.remove('scapula_winging')
+        #     maJoints.remove('elbow_flexion')
+        #     maJoints.remove('pro_sup')        
+        
         OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
-        inputs_MA = getInputsMA(pathMA, uBQs_nsc, lBQs_nsc, polynomialJoints,
+        inputs_MA = getInputsMA(pathMA, uBQs_nsc, lBQs_nsc, maJoints,
                                 nNodes, OpenSimDict)
         # # run MA in parallel
         # from getTrainingDataPolyApp import MA_parallel
