@@ -875,17 +875,17 @@ for case in cases:
         OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
         inputs_MA = getInputsMA(pathMA, uBQs_nsc, lBQs_nsc, maJoints,
                                 nNodes, OpenSimDict)
-        # # run MA in parallel
-        # from getTrainingDataPolyApp import MA_parallel
-        # from joblib import Parallel, delayed  
-        # useMultiProcessing = True
-        # if __name__ == "__main__":
-        #     if useMultiProcessing:
-        #         Njobs = NThreads
-        #     else:
-        #         Njobs = 1
-        #     Parallel(n_jobs=Njobs)(delayed(MA_parallel)(inputs_MA[i]) 
-        #                             for i in inputs_MA) 
+        # run MA in parallel
+        from getTrainingDataPolyApp import MA_parallel
+        from joblib import Parallel, delayed  
+        useMultiProcessing = True
+        if __name__ == "__main__":
+            if useMultiProcessing:
+                Njobs = NThreads
+            else:
+                Njobs = 1
+            Parallel(n_jobs=Njobs)(delayed(MA_parallel)(inputs_MA[i]) 
+                                    for i in inputs_MA) 
         
         from getTrainingDataPolyApp import generateTrainingData 
         generateTrainingData(inputs_MA, polynomialJoints, muscles)
