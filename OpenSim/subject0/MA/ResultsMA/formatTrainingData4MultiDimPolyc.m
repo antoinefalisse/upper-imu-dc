@@ -3,7 +3,7 @@ clc
 close all
 
 %% User settings
-folderNameTrainingData = 'grid_9nodes_6dim';
+folderNameTrainingData = 'grid_9nodes_3dim';
 % This is usually fixed.
 prefix = 'subject01_MuscleAnalysis_';
 
