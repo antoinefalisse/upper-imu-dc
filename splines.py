@@ -7,6 +7,20 @@ def lexsort_based(data):
     row_mask = np.append([True],np.any(np.diff(sorted_data,axis=0),1))
     return sorted_data[row_mask]
 
+def getROM(pathMA, joints):
+    
+    pathResultsSplines = os.path.join(pathMA, "MA_Splines")
+    if not os.path.exists(pathResultsSplines):
+        os.makedirs(pathResultsSplines)     
+
+    from variousFunctions import getIK
+    pathDummyMotion = os.path.join(pathMA, 'train_motion.mot')
+    jointCoordinates = (getIK(pathDummyMotion, joints)[0]).to_numpy()[:,1::] 
+    
+    maxima = np.max(jointCoordinates, axis=0)*180/np.pi
+    minima = np.min(jointCoordinates, axis=0)*180/np.pi
+    
+    return minima, maxima   
 
 def getTrainingLMT(pathMA, pathMuscleAnalysis, joints, muscles, nNodes,
                    OpenSimDict={}):

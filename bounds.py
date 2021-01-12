@@ -1,4 +1,3 @@
-import scipy.interpolate as interpolate
 import pandas as pd
 import numpy as np
 
@@ -100,15 +99,15 @@ class bounds:
         upperBoundsPosition_all['ground_thorax_tx'] = [1]
         upperBoundsPosition_all['ground_thorax_ty'] = [1]
         upperBoundsPosition_all['ground_thorax_tz'] = [1]        
-        upperBoundsPosition_all['clav_prot'] = [0 * np.pi / 180]
-        upperBoundsPosition_all['clav_elev'] = [40 * np.pi / 180]
-        upperBoundsPosition_all['scapula_abduction'] = [30 * np.pi / 180]
-        upperBoundsPosition_all['scapula_elevation'] = [30 * np.pi / 180]
-        upperBoundsPosition_all['scapula_upward_rot'] = [100 * np.pi / 180]
-        upperBoundsPosition_all['scapula_winging'] = [30 * np.pi / 180]        
-        upperBoundsPosition_all['plane_elv'] = [90 * np.pi / 180]
-        upperBoundsPosition_all['shoulder_elv'] = [110 * np.pi / 180]
-        upperBoundsPosition_all['axial_rot'] = [90 * np.pi / 180]
+        upperBoundsPosition_all['clav_prot'] = [-16 * np.pi / 180]
+        upperBoundsPosition_all['clav_elev'] = [17 * np.pi / 180]
+        upperBoundsPosition_all['scapula_abduction'] = [12 * np.pi / 180]
+        upperBoundsPosition_all['scapula_elevation'] = [8 * np.pi / 180]
+        upperBoundsPosition_all['scapula_upward_rot'] = [86 * np.pi / 180]
+        upperBoundsPosition_all['scapula_winging'] = [7 * np.pi / 180]        
+        upperBoundsPosition_all['plane_elv'] = [71 * np.pi / 180]
+        upperBoundsPosition_all['shoulder_elv'] = [92 * np.pi / 180]
+        upperBoundsPosition_all['axial_rot'] = [71 * np.pi / 180]
         upperBoundsPosition_all['elbow_flexion'] = [20 * np.pi / 180]
         upperBoundsPosition_all['pro_sup'] = [50 * np.pi / 180]
         
@@ -118,17 +117,97 @@ class bounds:
         lowerBoundsPosition_all['ground_thorax_tx'] = [-1]
         lowerBoundsPosition_all['ground_thorax_ty'] = [-1]
         lowerBoundsPosition_all['ground_thorax_tz'] = [-1]        
-        lowerBoundsPosition_all['clav_prot'] = [-60 * np.pi / 180]
-        lowerBoundsPosition_all['clav_elev'] = [-30 * np.pi / 180]
-        lowerBoundsPosition_all['scapula_abduction'] = [-50 * np.pi / 180]
-        lowerBoundsPosition_all['scapula_elevation'] = [-30 * np.pi / 180]
-        lowerBoundsPosition_all['scapula_upward_rot'] = [-10 * np.pi / 180]
-        lowerBoundsPosition_all['scapula_winging'] = [-30 * np.pi / 180]        
-        lowerBoundsPosition_all['plane_elv'] = [-60 * np.pi / 180]
-        lowerBoundsPosition_all['shoulder_elv'] = [-20 * np.pi / 180]
-        lowerBoundsPosition_all['axial_rot'] = [-50 * np.pi / 180]
+        lowerBoundsPosition_all['clav_prot'] = [-50 * np.pi / 180]
+        lowerBoundsPosition_all['clav_elev'] = [-8 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_abduction'] = [-38 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_elevation'] = [-8 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_upward_rot'] = [8 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_winging'] = [-17 * np.pi / 180]        
+        lowerBoundsPosition_all['plane_elv'] = [-44 * np.pi / 180]
+        lowerBoundsPosition_all['shoulder_elv'] = [0 * np.pi / 180]
+        lowerBoundsPosition_all['axial_rot'] = [-38 * np.pi / 180]
         lowerBoundsPosition_all['elbow_flexion'] = [-20 * np.pi / 180]
         lowerBoundsPosition_all['pro_sup'] = [10 * np.pi / 180]
+        
+        # Rotational joints
+        # The goal is to use the same scaling for each joint
+        max_rotationalJoints = np.zeros(len(self.rotationalJoints))
+        for count, rotationalJoint in enumerate(self.rotationalJoints): 
+            max_rotationalJoints[count] = pd.concat(
+                    [abs(upperBoundsPosition_all[rotationalJoint]),
+                     abs(lowerBoundsPosition_all[rotationalJoint])]).max(level=0)[0]
+        maxAll_rotationalJoints = np.max(max_rotationalJoints)      
+            
+        # Translational joints
+        # The goal is to use the same scaling for each joint
+        if self.translationalJoints:
+            max_translationalJoints = np.zeros(len(self.translationalJoints))
+            for count, translationalJoint in enumerate(self.translationalJoints): 
+                max_translationalJoints[count] = pd.concat(
+                        [abs(upperBoundsPosition_all[translationalJoint]),
+                         abs(lowerBoundsPosition_all[translationalJoint])]).max(level=0)[0]
+            maxAll_translationalJoints = np.max(max_translationalJoints)   
+        
+        upperBoundsPosition = pd.DataFrame()   
+        lowerBoundsPosition = pd.DataFrame()
+        scalingPosition = pd.DataFrame() 
+        
+        for count, joint in enumerate(self.joints):         
+            # Scaling            
+            if joint in self.rotationalJoints:
+                scalingPosition.insert(count, joint, [maxAll_rotationalJoints])
+            elif joint in self.translationalJoints:
+                scalingPosition.insert(count, joint, [maxAll_translationalJoints])
+            else:
+                 raise ValueError('Unknown joint')
+            upperBoundsPosition.insert(
+                 count, joint, [upperBoundsPosition_all.iloc[0][joint] / 
+                                scalingPosition.iloc[0][joint]])
+            lowerBoundsPosition.insert(
+                 count, joint, [lowerBoundsPosition_all.iloc[0][joint] / 
+                                scalingPosition.iloc[0][joint]])
+                
+        return upperBoundsPosition, lowerBoundsPosition, scalingPosition
+    
+    def getBoundsPositionPhysiological(self):
+        upperBoundsPosition_all = pd.DataFrame()   
+        lowerBoundsPosition_all = pd.DataFrame() 
+        
+        upperBoundsPosition_all['ground_thorax_rot_x'] = [20 * np.pi / 180]
+        upperBoundsPosition_all['ground_thorax_rot_y'] = [20 * np.pi / 180]
+        upperBoundsPosition_all['ground_thorax_rot_z'] = [10 * np.pi / 180]
+        upperBoundsPosition_all['ground_thorax_tx'] = [1]
+        upperBoundsPosition_all['ground_thorax_ty'] = [1]
+        upperBoundsPosition_all['ground_thorax_tz'] = [1]        
+        upperBoundsPosition_all['clav_prot'] = [-15 * np.pi / 180]
+        upperBoundsPosition_all['clav_elev'] = [20 * np.pi / 180]
+        upperBoundsPosition_all['scapula_abduction'] = [15 * np.pi / 180]
+        upperBoundsPosition_all['scapula_elevation'] = [10 * np.pi / 180]
+        upperBoundsPosition_all['scapula_upward_rot'] = [90 * np.pi / 180]
+        upperBoundsPosition_all['scapula_winging'] = [10 * np.pi / 180]        
+        upperBoundsPosition_all['plane_elv'] = [90 * np.pi / 180]
+        upperBoundsPosition_all['shoulder_elv'] = [100 * np.pi / 180]
+        upperBoundsPosition_all['axial_rot'] = [90 * np.pi / 180]
+        upperBoundsPosition_all['elbow_flexion'] = [130 * np.pi / 180]
+        upperBoundsPosition_all['pro_sup'] = [70 * np.pi / 180]
+        
+        lowerBoundsPosition_all['ground_thorax_rot_x'] = [-20 * np.pi / 180]
+        lowerBoundsPosition_all['ground_thorax_rot_y'] = [-30 * np.pi / 180]
+        lowerBoundsPosition_all['ground_thorax_rot_z'] = [-30 * np.pi / 180]
+        lowerBoundsPosition_all['ground_thorax_tx'] = [-1]
+        lowerBoundsPosition_all['ground_thorax_ty'] = [-1]
+        lowerBoundsPosition_all['ground_thorax_tz'] = [-1]        
+        lowerBoundsPosition_all['clav_prot'] = [-50 * np.pi / 180]
+        lowerBoundsPosition_all['clav_elev'] = [-10 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_abduction'] = [-40 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_elevation'] = [-10 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_upward_rot'] = [0 * np.pi / 180]
+        lowerBoundsPosition_all['scapula_winging'] = [-20 * np.pi / 180]        
+        lowerBoundsPosition_all['plane_elv'] = [-90 * np.pi / 180]
+        lowerBoundsPosition_all['shoulder_elv'] = [-10 * np.pi / 180]
+        lowerBoundsPosition_all['axial_rot'] = [-90 * np.pi / 180]
+        lowerBoundsPosition_all['elbow_flexion'] = [0 * np.pi / 180]
+        lowerBoundsPosition_all['pro_sup'] = [-70 * np.pi / 180]
         
         # Rotational joints
         # The goal is to use the same scaling for each joint
@@ -332,7 +411,7 @@ class bounds:
                 scalingAcceleration)
     
     def getBoundsActivation(self):
-        lb = [0.05] 
+        lb = [0.01] 
         lb_vec = lb * len(self.muscles)
         ub = [1]
         ub_vec = ub * len(self.muscles)
@@ -343,19 +422,6 @@ class bounds:
         scalingActivation = pd.DataFrame([s_vec], columns=self.muscles)
         upperBoundsActivation = upperBoundsActivation.div(scalingActivation)
         lowerBoundsActivation = lowerBoundsActivation.div(scalingActivation)
-        for count, muscle in enumerate(self.muscles):
-            upperBoundsActivation.insert(count + len(self.muscles), 
-                                         muscle[:-1] + 'l', ub)
-            lowerBoundsActivation.insert(count + len(self.muscles), 
-                                         muscle[:-1] + 'l', lb)  
-
-            # Scaling                       
-            scalingActivation.insert(count + len(self.muscles), 
-                                     muscle[:-1] + 'l', s)  
-            upperBoundsActivation[
-                    muscle[:-1] + 'l'] /= scalingActivation[muscle[:-1] + 'l']
-            lowerBoundsActivation[
-                    muscle[:-1] + 'l'] /= scalingActivation[muscle[:-1] + 'l']
         
         return upperBoundsActivation, lowerBoundsActivation, scalingActivation
     
@@ -371,19 +437,6 @@ class bounds:
         scalingForce = pd.DataFrame([s_vec], columns=self.muscles)
         upperBoundsForce = upperBoundsForce.div(scalingForce)
         lowerBoundsForce = lowerBoundsForce.div(scalingForce)
-        for count, muscle in enumerate(self.muscles):
-            upperBoundsForce.insert(count + len(self.muscles), 
-                                    muscle[:-1] + 'l', ub)
-            lowerBoundsForce.insert(count + len(self.muscles), 
-                                    muscle[:-1] + 'l', lb)  
-
-            # Scaling                       
-            scalingForce.insert(count + len(self.muscles), 
-                                         muscle[:-1] + 'l', s)   
-            upperBoundsForce[
-                    muscle[:-1] + 'l'] /= scalingForce[muscle[:-1] + 'l']
-            lowerBoundsForce[
-                    muscle[:-1] + 'l'] /= scalingForce[muscle[:-1] + 'l']
         
         return upperBoundsForce, lowerBoundsForce, scalingForce
     
@@ -406,19 +459,6 @@ class bounds:
                 scalingActivationDerivative)
         lowerBoundsActivationDerivative = lowerBoundsActivationDerivative.div(
                 scalingActivationDerivative)
-        for count, muscle in enumerate(self.muscles):
-            upperBoundsActivationDerivative.insert(count + len(self.muscles), 
-                                                   muscle[:-1] + 'l', ub)
-            lowerBoundsActivationDerivative.insert(count + len(self.muscles), 
-                                                   muscle[:-1] + 'l', lb) 
-
-            # Scaling                       
-            scalingActivationDerivative.insert(count + len(self.muscles), 
-                                               muscle[:-1] + 'l', s)  
-            upperBoundsActivationDerivative[muscle[:-1] + 'l'] /= (
-                    scalingActivationDerivative[muscle[:-1] + 'l'])
-            lowerBoundsActivationDerivative[muscle[:-1] + 'l'] /= (
-                    scalingActivationDerivative[muscle[:-1] + 'l'])             
         
         return (upperBoundsActivationDerivative, 
                 lowerBoundsActivationDerivative, scalingActivationDerivative)
@@ -440,19 +480,6 @@ class bounds:
                 scalingForceDerivative)
         lowerBoundsForceDerivative = lowerBoundsForceDerivative.div(
                 scalingForceDerivative)
-        for count, muscle in enumerate(self.muscles):
-            upperBoundsForceDerivative.insert(count + len(self.muscles), 
-                                              muscle[:-1] + 'l', ub)
-            lowerBoundsForceDerivative.insert(count + len(self.muscles), 
-                                              muscle[:-1] + 'l', lb)   
-            
-            # Scaling                       
-            scalingForceDerivative.insert(count + len(self.muscles), 
-                                               muscle[:-1] + 'l', s)  
-            upperBoundsForceDerivative[muscle[:-1] + 'l'] /= (
-                    scalingForceDerivative[muscle[:-1] + 'l'])
-            lowerBoundsForceDerivative[muscle[:-1] + 'l'] /= (
-                    scalingForceDerivative[muscle[:-1] + 'l']) 
         
         return (upperBoundsForceDerivative, lowerBoundsForceDerivative, 
                 scalingForceDerivative)
