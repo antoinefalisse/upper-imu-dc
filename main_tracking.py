@@ -1,11 +1,10 @@
-from sys import path
 import os
 if os.environ['COMPUTERNAME'] == 'GBW-L-W2003':
-    path.append(r"C:/Users/u0101727/Documents/Software/CasADi/casadi-windows-py37-v3.5.5-64bit")
     pathOS = "C:/Users/u0101727/Documents/MyRepositories/opensim-fork/install_ks/sdk/Python"
 elif os.environ['COMPUTERNAME'] == 'GBW-D-W2711':
-    path.append(r"C:/Users/Public/Documents/Software/casadi-windows-py37-v3.5.1-64bit")
     pathOS = "C:/OpenSim_4.1/sdk/Python"
+elif os.environ['COMPUTERNAME'] == 'DESKTOP-OC47A62':
+    pathOS = "C:/Users/antoi/Documents/VS2017/os-ks/install/sdk/Python"
 import casadi as ca
 import numpy as np
 import copy
