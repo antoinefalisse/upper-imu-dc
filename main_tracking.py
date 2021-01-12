@@ -8,8 +8,8 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, False, False, False, False, False, False, False, False]
-# run_options = [False, False, True, True, True, False, True, True, True, True]
+# run_options = [True, True, False, False, False, False, False, False, False, False]
+run_options = [False, False, True, True, True, False, True, True, True, True]
 
 
 solveProblem = run_options[0]
@@ -23,9 +23,9 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["72"]
+cases = ["74"]
 
-runTrainingDataPolyApp = True
+runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
@@ -38,7 +38,7 @@ visualizeLengthApproximation = False
 # Numerical Settings
 tol = 4
 d = 3
-NThreads = 25
+NThreads = 8
 parallelMode = "thread"
 
 from settings import getSettings     
@@ -137,12 +137,7 @@ for case in cases:
     if actuation == 'muscle-driven':
         muscle_approximation = settings[case]['muscle_approximation']
         if muscle_approximation == 'multi-dim-poly':
-            filter_training_data_poly = (
-                settings[case]['filter_training_data_poly'])
-            if filter_training_data_poly:
-                suffix_F_poly = '_filt'
-            else:
-                suffix_F_poly = ''
+            suffix_F_poly = settings[case]['suffix_F_poly']
         enablePassiveMuscleForces = settings[case]['enablePassiveMuscleForces']  
         weights['activationDt'] = settings[case]['w_activationDt']  
         weights['forceDt'] = settings[case]['w_forceDt']  

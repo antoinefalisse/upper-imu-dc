@@ -6,6 +6,7 @@ close all
 folderNameTrainingData = 'grid_9nodes_3dim';
 % This is usually fixed.
 prefix = 'subject01_MuscleAnalysis_';
+suffix_handTuned = '_handTuned';
 
 %% Coordinates and muscles
 coordinates = {'clav_prot', 'clav_elev', 'scapula_abduction', ...
@@ -29,15 +30,15 @@ muscles = {'TrapeziusScapula_M', 'TrapeziusScapula_S', ...
 
 %% Load training data
 % Muscle-tendon lengths
-pathLengths = [folderNameTrainingData, '/all/', prefix, 'Length.sto'];
+pathLengths = [folderNameTrainingData, '/all',suffix_handTuned,'/', prefix, 'Length.sto'];
 lMT = importdata(pathLengths);
 nSamples = size(lMT.data,1);
 % Moment arms
 for i = 1:length(coordinates)
-    MA.([coordinates{i}]) = importdata([folderNameTrainingData, '/all/', prefix,'MomentArm_',coordinates{i},'.sto']);
+    MA.([coordinates{i}]) = importdata([folderNameTrainingData, '/all',suffix_handTuned,'/', prefix,'MomentArm_',coordinates{i},'.sto']);
 end
 % Joint coordinate values
-pathMotion = [folderNameTrainingData, '/all/training_q.mot'];
+pathMotion = [folderNameTrainingData, '/all',suffix_handTuned,'/training_q.mot'];
 coordinate_values = importdata(pathMotion);
 
 for m = 1:length(muscles)
@@ -89,7 +90,7 @@ for m = 1:length(muscles)
     [metaData.nDOF, IA, ~] = unique(round(metaData_temp.nDOF,3), 'rows', 'stable');
     metaData.nMomArm = metaData_temp.nMomArm(IA, :);
     metaData.nLength = MuscleData.lMT(IA,m); 
-    save([folderNameTrainingData, '/all/', muscles{m},'MomentArm'], 'metaData')
+    save([folderNameTrainingData, '/all',suffix_handTuned,'/', muscles{m},'MomentArm'], 'metaData')
 end
 
 %% Get info to fill out .csv files
