@@ -3,6 +3,8 @@ if os.environ['COMPUTERNAME'] == 'GBW-L-W2003':
     pathOS = "C:/Users/u0101727/Documents/MyRepositories/opensim-fork/install_ks/sdk/Python"
 elif os.environ['COMPUTERNAME'] == 'GBW-D-W2711':
     pathOS = "C:/OpenSim_4.1/sdk/Python"
+elif os.environ['COMPUTERNAME'] == 'DESKTOP-OC47A62':
+    pathOS = "C:/OpenSim-4.2-2021-01-09-fc62aad//sdk/Python"
 import casadi as ca
 import numpy as np
 import copy
@@ -23,17 +25,17 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["74"]
+cases = ["73"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = True
+visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
-visualizeLengthApproximation = False
+visualizeLengthApproximation = True
 
 # Numerical Settings
 tol = 4
@@ -845,18 +847,26 @@ for case in cases:
         from getTrainingDataPolyApp import getInputsMA    
         # number of smapling point between (including) upper and lower bounds).
         # The number of samples = nNodes^nDim where nDim=NPolynomialJoints
-        nNodes = 9        
+        nNodes = 5        
         maJoints = ['clav_prot', 'clav_elev', 'scapula_abduction', 
                     'scapula_elevation', 'scapula_upward_rot', 
                     'scapula_winging', 'plane_elv', 'shoulder_elv', 
-                    'axial_rot', 'elbow_flexion', 'pro_sup']         
+                    'axial_rot', 'elbow_flexion', 'pro_sup']  
+        
+        # if dim=9
+        # if not enableElbowProSup:
+        #     maJoints.remove('elbow_flexion')
+        #     maJoints.remove('pro_sup')
+        
+        # if dim=6
         if not enableElbowProSup:
             maJoints.remove('plane_elv')
             maJoints.remove('shoulder_elv') 
             maJoints.remove('axial_rot')
             maJoints.remove('elbow_flexion')
             maJoints.remove('pro_sup') 
-            
+           
+        # if dim=3
         # if not enableElbowProSup:
         #     maJoints.remove('clav_prot')
         #     maJoints.remove('clav_elev') 
@@ -870,6 +880,7 @@ for case in cases:
         OpenSimDict = dict(pathOS=pathOS, pathOpenSimModel=pathOpenSimModel)
         inputs_MA = getInputsMA(pathMA, uBQs_nsc, lBQs_nsc, maJoints,
                                 nNodes, OpenSimDict)
+                                
         # run MA in parallel
         from getTrainingDataPolyApp import MA_parallel
         from joblib import Parallel, delayed  
@@ -3064,6 +3075,7 @@ for case in cases:
             plt.setp(axs[-1, :], xlabel='Time (s)')   
             plt.legend(handles1, labels1, loc='upper right')
             fig.align_ylabels()
+            fig.show()
             
         if visualizeConstraintErrors:
             # Contraint errors       

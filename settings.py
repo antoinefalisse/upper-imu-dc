@@ -2316,7 +2316,7 @@ def getSettings():
                 'w_gammaTerm': 1,   
                 'w_trackingTerm': 1000
                 },
-            '72': {
+            '72': { # optimal solution - constant hight activations
                 'subjectID' : '0',
                 'model': 'weldGT_lockedEP_scaled',
                 'trial': 'ABD01',
@@ -2353,7 +2353,7 @@ def getSettings():
                 'w_activationDt': 1,
                 'w_forceDt': 1, 
                 },
-            '73': {
+            '73': { # optimal solution - kind ok okay
                 'subjectID' : '0',
                 'model': 'weldGT_lockedEP_scaled',
                 'trial': 'ABD01',
@@ -2390,13 +2390,50 @@ def getSettings():
                 'w_activationDt': 1,
                 'w_forceDt': 1, 
                 },
-            '74': {
+            '74': { # optimal solution - kind ok okay
                 'subjectID' : '0',
                 'model': 'weldGT_lockedEP_scaled',
                 'trial': 'ABD01',
                 'tracking_data': 'coordinates',
                 'timeInterval': [2.8, 4.8],                
                 'N': 100,
+                'filter_coordinates_toTrack': True,
+                'coordinates_toTrack': {
+                    'rotational': ['clav_prot', 'clav_elev',
+                        'scapula_abduction', 'scapula_elevation',
+                        'scapula_upward_rot', 'scapula_winging',
+                        'plane_elv', 'shoulder_elv', 'axial_rot'],
+                    'translational': []},
+                'guess_zeroVelocity': True,
+                'guess_zeroAcceleration': True,
+                'guessType': "dataDriven",
+                'velocity_correction': True,
+                'constraint_pos': True,
+                'constraint_vel': True,
+                'constraint_acc': True,
+                'constraint_acc_tol': 1e-3,
+                'actuation': 'muscle-driven',
+                'type_bounds': 'physiological',
+                'muscle_approximation': 'multi-dim-poly',
+                'suffix_F_poly': '_selection_0',
+                'enablePassiveMuscleForces': False,                
+                
+                'w_jointAccTerm': 100,
+                'w_actuationTerm': 1000,
+                'w_gtJETerm': 1,
+                'w_lambdaTerm': 1,
+                'w_gammaTerm': 1,   
+                'w_trackingTerm': 1000,
+                'w_activationDt': 1,
+                'w_forceDt': 1, 
+                },
+            '75': { # max iteration (5000) but looks okay
+                'subjectID' : '0',
+                'model': 'weldGT_lockedEP_scaled',
+                'trial': 'FLX01',
+                'tracking_data': 'coordinates',
+                'timeInterval': [0.5, 1.5],                
+                'N': 50,
                 'filter_coordinates_toTrack': True,
                 'coordinates_toTrack': {
                     'rotational': ['clav_prot', 'clav_elev',
