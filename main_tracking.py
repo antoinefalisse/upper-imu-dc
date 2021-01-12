@@ -13,7 +13,6 @@ import copy
 # run_options = [True, True, False, False, False, False, False, False, False, False]
 run_options = [False, False, True, True, True, False, True, True, True, True]
 
-
 solveProblem = run_options[0]
 saveResults = run_options[1]
 analyzeResults = run_options[2]
@@ -157,7 +156,6 @@ for case in cases:
     pathOpenSimModel = os.path.join(pathModels, model + ".osim")   
     pathMA = os.path.join(pathSubject, 'MA')
     pathDummyMotion = os.path.join(pathMA, 'train_motion.mot')
-    pathMA = os.path.join(pathSubject, 'MA')
     pathMATrainingMotion = os.path.join(pathMA, 'ResultsMA', model + 
                                         "_train", 'subject01_MuscleAnalysis_')
     pathTRC = os.path.join(pathSubject, 'TRC', trial + ".trc")
