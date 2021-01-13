@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 
 # %% Settings 
 # cases = ['76', '78', '81'] # flexion
-# cases = ['70','79', '85'] # abduction
-cases = ['71','80', '86'] # shrugging
+# cases = ['70','79', '82', '85'] # abduction
+cases = ['71','80', '83', '86'] # shrugging
 mainName = "main_tracking"
 subject = "subject1"
 reference_case_IMU = cases[0]
