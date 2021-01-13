@@ -3,11 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt  
 
 # %% Settings 
-cases = ['78','81']
-# cases = ['41', '63', '62', '61'] # flexion
-# cases = ['48', '60', '59', '58'] # abduction
+# cases = ['76', '78', '81'] # flexion
+# cases = ['70','79', '85'] # abduction
+cases = ['71','80', '86'] # shrugging
 mainName = "main_tracking"
 subject = "subject1"
+reference_case_IMU = cases[0]
 
 # %% Fixed settings
 pathMain = os.getcwd()
@@ -19,6 +20,7 @@ optimaltrajectories = np.load(os.path.join(pathTrajectories,
     
 # %% Visualize results
 plt.close('all')
+case_colors = {}
 
 # %% Joint coordinates
 # kinematic_ylim_ub = [20, 1, 1, 50, 50, 20, 20, 30, 30, 60, 60, 20]
@@ -38,8 +40,10 @@ for i, ax in enumerate(axs.flat):
             if case == cases[0]:
                 ax.plot(optimaltrajectories[case]['time'].T,
                         optimaltrajectories[case]['ref_coordinate_values'][idxJointsToPlot[i]:idxJointsToPlot[i]+1, :].T, c='black', label='Experimental')            
+            col = next(color)
             ax.plot(optimaltrajectories[case]['time'].T,
-                    optimaltrajectories[case]['sim_coordinate_values'][idxJointsToPlot[i]:idxJointsToPlot[i]+1, :].T, c=next(color), label='case_' + case)         
+                    optimaltrajectories[case]['sim_coordinate_values'][idxJointsToPlot[i]:idxJointsToPlot[i]+1, :].T, c=col, label='case_' + case)         
+            case_colors[case] = col
         ax.set_title(joints[idxJointsToPlot[i]])
         # ax.set_ylim((kinematic_ylim_lb[i],kinematic_ylim_ub[i]))
         handles, labels = ax.get_legend_handles_labels()
@@ -48,7 +52,7 @@ plt.setp(axs[-1, :], xlabel='Time (s)')
 plt.setp(axs[:, 0], ylabel='(Angle (deg))')
 fig.align_ylabels()
 
-# %% Joint coordinates
+# %% Joint torques
 # kinematic_ylim_ub = [20, 1, 1, 50, 50, 20, 20, 30, 30, 60, 60, 20]
 # kinematic_ylim_lb = [-20, -1, 0.8, -30, -30, -80, -80, -30, -30, -20, -20, -20]
 joints = optimaltrajectories[cases[0]]['joints']
@@ -72,6 +76,57 @@ for i, ax in enumerate(axs.flat):
 plt.setp(axs[-1, :], xlabel='Time (s)')
 plt.setp(axs[:, 0], ylabel='(Torque (Nm))')
 fig.align_ylabels()
+
+# %% IMU tracking
+joints = optimaltrajectories[cases[0]]['joints']
+jointsToPlot = joints
+from variousFunctions import getJointIndices
+idxJointsToPlot = getJointIndices(joints, jointsToPlot)
+NJointsToPlot = len(jointsToPlot)    
+
+plotIMUTracking = False
+for case in cases:
+    if 'ref_imu_data' in optimaltrajectories[case]:
+        plotIMUTracking = True
+        plotIMUTrackingR = False
+        nrows = 2
+        if 'ref_imu_data_R' in optimaltrajectories[case]:
+            plotIMUTrackingR = True
+            nrows = 3
+imu_titles = ["Angular velocity x", "Angular velocity y",
+              "Angular velocity z", "Linear Acceleration x", 
+              "Linear Acceleration y", "Linear Acceleration z",
+              "Euler angle x", "Euler angle y", "Euler angle z"] 
+if plotIMUTracking:
+    fig, axs = plt.subplots(nrows, 3, sharex=True)  
+    fig.suptitle('IMU tracking')
+    for i, ax in enumerate(axs.flat):
+            # color=iter(plt.cm.rainbow(np.linspace(0,1,len(cases))))
+            referenceIsPlotted = False
+            for case in cases:                
+                if 'ref_imu_data' in optimaltrajectories[case]:
+                    if i < 6:                                                
+                        if not referenceIsPlotted:
+                            ax.plot(optimaltrajectories[case]['time'][0,1::].T,
+                                    optimaltrajectories[case]['ref_imu_data'][i:i+1, :].T, c=case_colors[reference_case_IMU], label='Synthetic')            
+                            referenceIsPlotted = True
+                        ax.plot(optimaltrajectories[case]['time'][0,1::].T,
+                                optimaltrajectories[case]['sim_imu_data'][i:i+1, :].T, c=case_colors[case], label='case_' + case)         
+                    if plotIMUTrackingR and i > 5:
+                        if not referenceIsPlotted:
+                            ax.plot(optimaltrajectories[case]['time'][0,1::].T,
+                                    optimaltrajectories[case]['ref_imu_data_R'][i-6:i-6+1, :].T, c=case_colors[reference_case_IMU], label='Synthetic')            
+                            referenceIsPlotted = True
+                        ax.plot(optimaltrajectories[case]['time'][0,1::].T,
+                                optimaltrajectories[case]['sim_imu_data_R'][i-6:i-6+1, :].T, c=case_colors[case], label='case_' + case)
+            ax.set_title(imu_titles[i])
+            # ax.set_ylim((kinematic_ylim_lb[i],kinematic_ylim_ub[i]))
+            handles, labels = ax.get_legend_handles_labels()
+            plt.legend(handles, labels, loc='upper right')
+    plt.setp(axs[-1, :], xlabel='Time (s)')
+    plt.setp(axs[:, 0], ylabel='(todo)')
+    fig.align_ylabels()
+
 
 # # %% Muscle activations
 # muscles = optimaltrajectories[cases[0]]['muscles']

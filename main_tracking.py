@@ -24,14 +24,14 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["86"]
+cases = ["87"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = True
+visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
 visualizeLengthApproximation = False
@@ -2839,7 +2839,14 @@ for case in cases:
                                 'sim_coordinate_torques': torques_opt,
                                 'time': tgridf,
                                 'joints': joints,
-                                'objective': stats['iterations']['obj'][-1]}              
+                                'objective': stats['iterations']['obj'][-1]}     
+            if tracking_data == "imus":
+                optimaltrajectories[case]['ref_imu_data'] = dataToTrack_nsc
+                optimaltrajectories[case]['sim_imu_data'] = imu_u_opt_nsc
+                if track_orientations:
+                    optimaltrajectories[case]['ref_imu_data_R'] = XYZ_data_interp_nsc * 180 / np.pi
+                    optimaltrajectories[case]['sim_imu_data_R'] = XYZ_u_opt_nsc * 180 / np.pi
+                
             np.save(os.path.join(pathTrajectories, 'optimaltrajectories.npy'),
                     optimaltrajectories)
             
