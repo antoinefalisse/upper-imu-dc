@@ -10,8 +10,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, False, False, False, False, False, False, False, False]
-run_options = [False, False, True, True, True, False, True, True, True, True]
+run_options = [True, True, False, False, False, False, False, False, False, False]
+# run_options = [False, False, True, True, True, False, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -24,17 +24,17 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["73"]
+cases = ["84", "85", "86"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = False
+visualizeResultsAgainstBounds = True
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
-visualizeLengthApproximation = True
+visualizeLengthApproximation = False
 
 # Numerical Settings
 tol = 4
@@ -485,7 +485,12 @@ for case in cases:
     elif tracking_data == "imus":
         if velocity_correction:
             if constraint_pos and constraint_vel and constraint_acc:
-                print("Not supported")       
+                if track_imus_frame == "bodyFrame":
+                    F = ca.external('F', prefixF + subject[0] + subject[-1] +
+                                    '_t0_IMUB.dll')  
+                elif track_imus_frame == "groundFrame":
+                    F = ca.external('F', prefixF + subject[0] + subject[-1] +
+                                    '_t0_IMUG' + suffix_R + '.dll')      
             elif constraint_pos and constraint_vel and not constraint_acc:
                 if track_imus_frame == "bodyFrame":
                     F = ca.external('F', prefixF + subject[0] + subject[-1] +
@@ -494,6 +499,8 @@ for case in cases:
                     F = ca.external('F', prefixF + subject[0] + subject[-1] +
                                     '_t1_IMUG' + suffix_R + '.dll')                      
                 NKinConstraints = 2*NHolConstraints
+        else:
+            print("Not supported")             
         if track_orientations:
             # This function returns the error angle between the virtual and
             # experimental sensor orientations. The Simbody functions used for

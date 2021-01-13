@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt  
 
 # %% Settings 
-cases = ['51', '71']
+cases = ['78','81']
 # cases = ['41', '63', '62', '61'] # flexion
 # cases = ['48', '60', '59', '58'] # abduction
 mainName = "main_tracking"
