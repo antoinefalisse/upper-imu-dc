@@ -10,8 +10,8 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, False, False, False, False, False, False, False, False]
-# run_options = [False, False, True, True, True, False, True, True, True, True]
+# run_options = [True, True, False, False, False, False, False, False, False, False]
+run_options = [False, False, True, True, True, False, True, True, True, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -24,14 +24,14 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["88", "89", "90"]
+cases = ["87"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = False
+visualizeResultsAgainstBounds = True
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
 visualizeLengthApproximation = False
