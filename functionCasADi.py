@@ -136,6 +136,43 @@ def hillEquilibriumNoPassive(mtParameters, tendonCompliance, tendonShift,
     
     return f_hillEquilibriumNoPassive
 
+def getMuscleForce_rigidTendon(mtParameters, specificTension):
+    
+    NMuscles = mtParameters.shape[1]
+    # Function variables
+    activation = ca.SX.sym('activation', NMuscles)
+    mtLength = ca.SX.sym('mtLength', NMuscles)
+    mtVelocity = ca.SX.sym('mtVelocity', NMuscles)
+     
+    muscleForce = ca.SX(NMuscles, 1)
+    activeFiberForce = ca.SX(NMuscles, 1)
+    normActiveFiberLengthForce = ca.SX(NMuscles, 1)
+    passiveFiberForce = ca.SX(NMuscles, 1)
+    normFiberLength = ca.SX(NMuscles, 1)
+    fiberVelocity = ca.SX(NMuscles, 1)
+    
+    from muscleModel import muscleModel_rigidTendon
+    for m in range(NMuscles):    
+        muscle = muscleModel_rigidTendon(
+            mtParameters[:, m], activation[m], mtLength[m],
+            mtVelocity[m], specificTension[:, m])
+        
+        muscleForce[m] = muscle.getTotalFiberForce()[0]
+        activeFiberForce[m] = muscle.getActiveFiberForce()[0]
+        passiveFiberForce[m] = muscle.getPassiveFiberForce()[0]
+        normActiveFiberLengthForce[m] = muscle.getActiveFiberLengthForce()
+        normFiberLength[m] = muscle.getFiberLength()[1]
+        fiberVelocity[m] = muscle.getFiberVelocity()[0]
+        
+    f_getMuscleForce_rigidTendon = (
+        ca.Function('f_getMuscleForce_rigidTendon',
+                    [activation, mtLength, mtVelocity], 
+                    [muscleForce, activeFiberForce, passiveFiberForce,
+                     normActiveFiberLengthForce, normFiberLength, 
+                     fiberVelocity])) 
+    
+    return f_getMuscleForce_rigidTendon
+
 def torqueMotorDynamics(NJoints):
     t = 0.035 # time constant       
     

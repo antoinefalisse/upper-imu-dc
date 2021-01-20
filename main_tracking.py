@@ -10,8 +10,8 @@ import numpy as np
 import copy
 
 # User settings
-# run_options = [True, True, False, False, False, False, False, False, False, False]
-run_options = [False, False, True, True, True, False, True, True, False, True]
+run_options = [True, True, False, False, False, False, False, False, False, False]
+# run_options = [False, False, True, True, True, False, True, True, False, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -24,7 +24,7 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["91"]
+cases = ["93"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
@@ -34,7 +34,7 @@ plotGuessVsBounds = False
 visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
-visualizeLengthApproximation = True
+visualizeLengthApproximation = False
 visualizeFiberLengths = True
 
 # Numerical Settings
@@ -143,6 +143,11 @@ for case in cases:
         enablePassiveMuscleForces = settings[case]['enablePassiveMuscleForces']  
         weights['activationDt'] = settings[case]['w_activationDt']  
         weights['forceDt'] = settings[case]['w_forceDt']  
+        
+        muscleContractionDynamics = True # Default
+        if "muscleContractionDynamics" in settings[case]:
+            muscleContractionDynamics = (
+                settings[case]['muscleContractionDynamics'])            
     else:
         muscle_approximation = 'none'
         
@@ -204,14 +209,21 @@ for case in cases:
     specificTension = getSpecificTension(NMuscles)
     
     if actuation == 'muscle-driven':
-        if enablePassiveMuscleForces:
-            from functionCasADi import hillEquilibrium
-            f_hillEquilibrium = hillEquilibrium(
-                mtParameters, tendonCompliance, tendonShift, specificTension)
+        if muscleContractionDynamics:
+            if enablePassiveMuscleForces:
+                from functionCasADi import hillEquilibrium
+                f_hillEquilibrium = hillEquilibrium(
+                    mtParameters, tendonCompliance, tendonShift,
+                    specificTension)
+            else:
+                from functionCasADi import hillEquilibriumNoPassive
+                f_hillEquilibriumNoPassive = hillEquilibriumNoPassive(
+                    mtParameters, tendonCompliance, tendonShift,
+                    specificTension)   
         else:
-            from functionCasADi import hillEquilibriumNoPassive
-            f_hillEquilibriumNoPassive = hillEquilibriumNoPassive(
-                mtParameters, tendonCompliance, tendonShift, specificTension)        
+            from functionCasADi import getMuscleForce_rigidTendon
+            f_getMuscleForce_rigidTendon = getMuscleForce_rigidTendon(
+                mtParameters, specificTension)
         
     # Time constants
     activationTimeConstant = 0.015
@@ -720,12 +732,12 @@ for case in cases:
         lBAk = ca.vec(lBA.to_numpy().T * np.ones((1, N+1))).full()
         uBAj = ca.vec(uBA.to_numpy().T * np.ones((1, d*N))).full()
         lBAj = ca.vec(lBA.to_numpy().T * np.ones((1, d*N))).full()
-        
-        uBF, lBF, scalingF = bounds.getBoundsForce()
-        uBFk = ca.vec(uBF.to_numpy().T * np.ones((1, N+1))).full()
-        lBFk = ca.vec(lBF.to_numpy().T * np.ones((1, N+1))).full()
-        uBFj = ca.vec(uBF.to_numpy().T * np.ones((1, d*N))).full()
-        lBFj = ca.vec(lBF.to_numpy().T * np.ones((1, d*N))).full()
+        if muscleContractionDynamics:
+            uBF, lBF, scalingF = bounds.getBoundsForce()
+            uBFk = ca.vec(uBF.to_numpy().T * np.ones((1, N+1))).full()
+            lBFk = ca.vec(lBF.to_numpy().T * np.ones((1, N+1))).full()
+            uBFj = ca.vec(uBF.to_numpy().T * np.ones((1, d*N))).full()
+            lBFj = ca.vec(lBF.to_numpy().T * np.ones((1, d*N))).full()
     elif actuation == 'torque-driven':        
         uBActJA, lBActJA, scalingActJA = bounds.getBoundsTMActivation(
             actJoints)
@@ -809,7 +821,7 @@ for case in cases:
                 imuData_toTrack)
             uBXYZk = ca.vec(uBXYZ.to_numpy().T * np.ones((1, N))).full()
             lBXYZk = ca.vec(lBXYZ.to_numpy().T * np.ones((1, N))).full()
-    if actuation == 'muscle-driven':
+    if actuation == 'muscle-driven' and muscleContractionDynamics:
         uBFDt, lBFDt, scalingFDt = bounds.getBoundsForceDerivative()
         uBFDtj = ca.vec(uBFDt.to_numpy().T * np.ones((1, d*N))).full()
         lBFDtj = ca.vec(lBFDt.to_numpy().T * np.ones((1, d*N))).full()
@@ -923,8 +935,9 @@ for case in cases:
     if actuation == 'muscle-driven':
         guessA = guess.getGuessActivation(scalingA)
         guessACol = guess.getGuessActivationCol()
-        guessF = guess.getGuessForce(scalingF)
-        guessFCol = guess.getGuessForceCol()
+        if muscleContractionDynamics:
+            guessF = guess.getGuessForce(scalingF)
+            guessFCol = guess.getGuessForceCol()
     elif actuation == 'torque-driven':
         guessActJA = guess.getGuessTMActivation(actJoints)
         guessActJACol = guess.getGuessTMActivationCol()
@@ -961,7 +974,7 @@ for case in cases:
         if track_orientations:
             guessXYZ = guess.getGuessIMU(imuData_toTrack, XYZ_data_interp,
                                          scalingXYZ)
-    if actuation == 'muscle-driven':
+    if actuation == 'muscle-driven' and muscleContractionDynamics:
         guessFDt = guess.getGuessForceDerivative(scalingFDt)
         guessFDtCol = guess.getGuessForceDerivativeCol()      
     # if tracking_data == "markers":
@@ -1095,18 +1108,19 @@ for case in cases:
             opti.set_initial(a_c, guessACol.to_numpy().T)
             assert np.alltrue(lBAj <= ca.vec(guessACol.to_numpy().T).full()), "lb Muscle activation col"
             assert np.alltrue(uBAj >= ca.vec(guessACol.to_numpy().T).full()), "ub Muscle activation col"
-            # Muscle force at mesh points
-            normF = opti.variable(NMuscles, N+1)
-            opti.subject_to(opti.bounded(lBFk, ca.vec(normF), uBFk))
-            opti.set_initial(normF, guessF.to_numpy().T)
-            assert np.alltrue(lBFk <= ca.vec(guessF.to_numpy().T).full()), "lb Muscle force"
-            assert np.alltrue(uBFk >= ca.vec(guessF.to_numpy().T).full()), "ub Muscle force"
-            # Muscle force at collocation points
-            normF_c = opti.variable(NMuscles, d*N)
-            opti.subject_to(opti.bounded(lBFj, ca.vec(normF_c), uBFj))
-            opti.set_initial(normF_c, guessFCol.to_numpy().T)
-            assert np.alltrue(lBFj <= ca.vec(guessFCol.to_numpy().T).full()), "lb Muscle force col"
-            assert np.alltrue(uBFj >= ca.vec(guessFCol.to_numpy().T).full()), "ub Muscle force col"
+            if muscleContractionDynamics:
+                # Muscle force at mesh points
+                normF = opti.variable(NMuscles, N+1)
+                opti.subject_to(opti.bounded(lBFk, ca.vec(normF), uBFk))
+                opti.set_initial(normF, guessF.to_numpy().T)
+                assert np.alltrue(lBFk <= ca.vec(guessF.to_numpy().T).full()), "lb Muscle force"
+                assert np.alltrue(uBFk >= ca.vec(guessF.to_numpy().T).full()), "ub Muscle force"
+                # Muscle force at collocation points
+                normF_c = opti.variable(NMuscles, d*N)
+                opti.subject_to(opti.bounded(lBFj, ca.vec(normF_c), uBFj))
+                opti.set_initial(normF_c, guessFCol.to_numpy().T)
+                assert np.alltrue(lBFj <= ca.vec(guessFCol.to_numpy().T).full()), "lb Muscle force col"
+                assert np.alltrue(uBFj >= ca.vec(guessFCol.to_numpy().T).full()), "ub Muscle force col"
         elif actuation == 'torque-driven':
             # Actuated joints activation at mesh points
             aActJ = opti.variable(NActJoints, N+1)
@@ -1186,7 +1200,7 @@ for case in cases:
         #######################################################################
         # Slack controls
         #######################################################################
-        if actuation == 'muscle-driven':
+        if actuation == 'muscle-driven' and muscleContractionDynamics:
             # Muscle force derivative at collocation points
             normFDt_c = opti.variable(NMuscles, d*N)
             opti.subject_to(opti.bounded(lBFDtj, ca.vec(normFDt_c), uBFDtj))
@@ -1281,18 +1295,19 @@ for case in cases:
                 y = guessACol.to_numpy().T
                 title='Muscle activation at collocation points' 
                 plotVSBounds(y,lb,ub,title)  
-                # Muscle force at mesh points
-                lb = lBF.to_numpy().T
-                ub = uBF.to_numpy().T
-                y = guessF.to_numpy().T
-                title='Muscle force at mesh points' 
-                plotVSBounds(y,lb,ub,title)  
-                # Muscle force at collocation points
-                lb = lBF.to_numpy().T
-                ub = uBF.to_numpy().T
-                y = guessFCol.to_numpy().T
-                title='Muscle force at collocation points' 
-                plotVSBounds(y,lb,ub,title)
+                if muscleContractionDynamics:
+                    # Muscle force at mesh points
+                    lb = lBF.to_numpy().T
+                    ub = uBF.to_numpy().T
+                    y = guessF.to_numpy().T
+                    title='Muscle force at mesh points' 
+                    plotVSBounds(y,lb,ub,title)  
+                    # Muscle force at collocation points
+                    lb = lBF.to_numpy().T
+                    ub = uBF.to_numpy().T
+                    y = guessFCol.to_numpy().T
+                    title='Muscle force at collocation points' 
+                    plotVSBounds(y,lb,ub,title)
             elif actuation == 'torque-driven':
                 # Actuated joints activation at mesh points
                 lb = lBActJA.to_numpy().T
@@ -1370,7 +1385,7 @@ for case in cases:
             ###################################################################
             # Slack controls
             ###################################################################
-            if actuation == 'muscle-driven':
+            if actuation == 'muscle-driven' and muscleContractionDynamics:
                 # Muscle force derivative at collocation points
                 lb = lBFDt.to_numpy().T
                 ub = uBFDt.to_numpy().T
@@ -1436,9 +1451,10 @@ for case in cases:
             ak = ca.MX.sym('ak', NMuscles)
             aj = ca.MX.sym('aj', NMuscles, d)    
             akj = ca.horzcat(ak, aj)    
-            normFk = ca.MX.sym('normFk', NMuscles)
-            normFj = ca.MX.sym('normFj', NMuscles, d)
-            normFkj = ca.horzcat(normFk, normFj)   
+            if muscleContractionDynamics:
+                normFk = ca.MX.sym('normFk', NMuscles)
+                normFj = ca.MX.sym('normFj', NMuscles, d)
+                normFkj = ca.horzcat(normFk, normFj)   
         elif actuation == 'torque-driven':
             aActJk = ca.MX.sym('aActJk', NActJoints)
             aActJj = ca.MX.sym('aActJj', NActJoints, d)
@@ -1461,7 +1477,7 @@ for case in cases:
         if enableGroundThorax:
             eGTJk = ca.MX.sym('eGTJk', NGroundThoraxJoints)
         # Slack controls
-        if actuation == 'muscle-driven':
+        if actuation == 'muscle-driven' and muscleContractionDynamics:
             normFDtj = ca.MX.sym('normFDtj', NMuscles, d);        
         Qdotdotsj = ca.MX.sym('Qdotdotsj', NJoints, d)     
         lambdaj = ca.MX.sym('lambdaj', NHolConstraints, d)   
@@ -1489,7 +1505,7 @@ for case in cases:
             # Unscale variables
             ###################################################################
             # States
-            if actuation == 'muscle-driven':
+            if actuation == 'muscle-driven' and muscleContractionDynamics:
                 normFkj_nsc = normFkj * (scalingF.to_numpy().T * np.ones((1, d+1)))
             elif actuation == 'torque-driven':
                 aActJkj_nsc = aActJkj * (scalingActJA.to_numpy().T * np.ones((1, d+1)))
@@ -1501,7 +1517,7 @@ for case in cases:
             if actuation == 'muscle-driven':
                 aDtk_nsc = aDtk * (scalingADt.to_numpy().T)
             # Slack controls
-            if actuation == 'muscle-driven':
+            if actuation == 'muscle-driven' and muscleContractionDynamics:
                 normFDtj_nsc = normFDtj * (scalingFDt.to_numpy().T * np.ones((1, d)))
             Qdotdotsj_nsc = Qdotdotsj * (scalingQdotdots.to_numpy().T * np.ones((1, d))) 
             lambdaj_nsc = lambdaj * (scalingLambda.to_numpy().T * np.ones((1, d)))
@@ -1537,14 +1553,26 @@ for case in cases:
             # Hill-equilibrium        
             ###################################################################
             if actuation == 'muscle-driven':
-                if enablePassiveMuscleForces:
-                    [hillEquilibriumj, Fj, _, _, _, _, _] = (
-                        f_hillEquilibrium(akj[:, j+1], lMTj, vMTj, 
-                          normFkj_nsc[:, j+1], normFDtj_nsc[:, j])) 
+                if muscleContractionDynamics:
+                    if enablePassiveMuscleForces:
+                        [hillEquilibriumj, Fj, _, _, _, _, _] = (
+                            f_hillEquilibrium(akj[:, j+1], lMTj, vMTj,
+                              normFkj_nsc[:, j+1], normFDtj_nsc[:, j]))
+                    else:
+                        [hillEquilibriumj, Fj, _, _, _, _] = (
+                            f_hillEquilibriumNoPassive(akj[:, j+1], lMTj, vMTj,
+                               normFkj_nsc[:, j+1], normFDtj_nsc[:, j]))
                 else:
-                    [hillEquilibriumj, Fj, _, _, _, _] = (
-                        f_hillEquilibriumNoPassive(akj[:, j+1], lMTj, vMTj, 
-                           normFkj_nsc[:, j+1], normFDtj_nsc[:, j])) 
+                    if enablePassiveMuscleForces:
+                        # Fj is muscleForce.
+                        [Fj, _, _, _, _, _] = (
+                            f_getMuscleForce_rigidTendon(
+                                akj[:, j+1], lMTj, vMTj))   
+                    else:
+                        # Fj is activeFiberForce instead of muscleForce.
+                        [_, Fj, _, _, _, _] = (
+                            f_getMuscleForce_rigidTendon(
+                                akj[:, j+1], lMTj, vMTj))                    
                     
             ###################################################################
             # Cost function
@@ -1568,9 +1596,10 @@ for case in cases:
                 Jj += (weights['gtJETerm'] * gtJETerm)                    
             if actuation == 'muscle-driven':
                 activationDtTerm = f_NMusclesSum2(aDtk)
-                forceDtTerm = f_NMusclesSum2(normFDtj[:, j])
-                Jj += (weights['activationDt'] * activationDtTerm + 
-                       weights['forceDt'] * forceDtTerm)        
+                Jj += (weights['activationDt'] * activationDtTerm)
+                if muscleContractionDynamics:
+                    forceDtTerm = f_NMusclesSum2(normFDtj[:, j])
+                    Jj += (weights['forceDt'] * forceDtTerm)        
                 
             J += (Jj * (h * B[j + 1]))
             
@@ -1600,8 +1629,9 @@ for case in cases:
             # Expression for the state derivatives at the collocation points
             ###################################################################
             if actuation == 'muscle-driven':
-                ap = ca.mtimes(akj, C[j+1])        
-                normFp_nsc = ca.mtimes(normFkj_nsc, C[j+1])
+                ap = ca.mtimes(akj, C[j+1]) 
+                if muscleContractionDynamics:
+                    normFp_nsc = ca.mtimes(normFkj_nsc, C[j+1])
             elif actuation == 'torque-driven':
                 aActJp = ca.mtimes(aActJkj, C[j+1])
             Qsp_nsc = ca.mtimes(Qskj_nsc, C[j+1])
@@ -1629,9 +1659,10 @@ for case in cases:
             if actuation == 'muscle-driven':
                 # Muscle activation dynamics (implicit formulation)
                 g_eq.append((h*aDtk_nsc - ap))
-                # Muscle contraction dynamics (implicit formulation)  
-                g_eq.append((h*normFDtj_nsc[:, j] - normFp_nsc) / 
-                            scalingF.to_numpy().T)
+                if muscleContractionDynamics:
+                    # Muscle contraction dynamics (implicit formulation)  
+                    g_eq.append((h*normFDtj_nsc[:, j] - normFp_nsc) / 
+                                scalingF.to_numpy().T)
             elif actuation == 'torque-driven':
                 # Actuated joints dynamics (explicit formulation) 
                 aActJDtj = f_actJointsDynamics(eActJk, aActJkj[:, j+1])
@@ -1674,8 +1705,9 @@ for case in cases:
                 act2 = aDtk_nsc + akj[:, j+1] / activationTimeConstant
                 g_ineq1.append(act1)
                 g_ineq2.append(act2)
-                # Contraction dynamics (implicit formulation)
-                g_eq.append(hillEquilibriumj)
+                if muscleContractionDynamics:
+                    # Contraction dynamics (implicit formulation)
+                    g_eq.append(hillEquilibriumj)
             elif actuation == 'torque-driven':
                 # Actuate joints with ideal motor torques.
                 # Starting from "clav_prot", which is in "all" cases the first
@@ -1736,48 +1768,90 @@ for case in cases:
         #######################################################################
         # Create map construct (parallel computing)
         if actuation == 'muscle-driven':
-            if enableGroundThorax:
-                if velocity_correction:
-                    if tracking_data == "coordinates":
-                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj, 
-                                  Qdotsk, Qdotsj, aGTJk, aGTJj, 
-                                  aDtk, eGTJk, 
-                                  normFDtj, Qdotdotsj, lambdaj, gammaj]
-                        f_c_out = [g_eq, g_ineq1, g_ineq2, J]
-                    elif tracking_data == "imus":
-                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
-                                  Qdotsk, Qdotsj, aGTJk, aGTJj, 
-                                  aDtk, eGTJk, 
-                                  normFDtj, Qdotdotsj, lambdaj, gammaj]
-                        f_c_out = [g_eq, g_ineq1, g_ineq2, J, imuj]
+            if muscleContractionDynamics:
+                if enableGroundThorax:
+                    if velocity_correction:
+                        if tracking_data == "coordinates":
+                            f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj, 
+                                      Qdotsk, Qdotsj, aGTJk, aGTJj, 
+                                      aDtk, eGTJk, 
+                                      normFDtj, Qdotdotsj, lambdaj, gammaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J]
+                        elif tracking_data == "imus":
+                            f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                      Qdotsk, Qdotsj, aGTJk, aGTJj, 
+                                      aDtk, eGTJk, 
+                                      normFDtj, Qdotdotsj, lambdaj, gammaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J, imuj]
+                    else:
+                        if tracking_data == "coordinates":
+                            f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                      Qdotsk, Qdotsj, aGTJk, aGTJj, 
+                                      aDtk, eGTJk, 
+                                      normFDtj, Qdotdotsj, lambdaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J]
                 else:
-                    if tracking_data == "coordinates":
-                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
-                                  Qdotsk, Qdotsj, aGTJk, aGTJj, 
-                                  aDtk, eGTJk, 
-                                  normFDtj, Qdotdotsj, lambdaj]
-                        f_c_out = [g_eq, g_ineq1, g_ineq2, J]
-            else:
-                if velocity_correction:
-                    if tracking_data == "coordinates":
-                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
-                                  Qdotsk, Qdotsj, 
-                                  aDtk, 
-                                  normFDtj, Qdotdotsj, lambdaj, gammaj]
-                        f_c_out = [g_eq, g_ineq1, g_ineq2, J]
-                    elif tracking_data == "imus":
-                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
-                                  Qdotsk, Qdotsj, 
-                                  aDtk, 
-                                  normFDtj, Qdotdotsj, lambdaj, gammaj]
-                        f_c_out = [g_eq, g_ineq1, g_ineq2, J, imuj]
+                    if velocity_correction:
+                        if tracking_data == "coordinates":
+                            f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                      Qdotsk, Qdotsj, 
+                                      aDtk, 
+                                      normFDtj, Qdotdotsj, lambdaj, gammaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J]
+                        elif tracking_data == "imus":
+                            f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                      Qdotsk, Qdotsj, 
+                                      aDtk, 
+                                      normFDtj, Qdotdotsj, lambdaj, gammaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J, imuj]
+                    else:
+                        if tracking_data == "coordinates":
+                            f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
+                                      Qdotsk, Qdotsj, 
+                                      aDtk, 
+                                      normFDtj, Qdotdotsj, lambdaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J]   
+            else: # no muscle contraction dynamics.
+                if enableGroundThorax:
+                    if velocity_correction:
+                        if tracking_data == "coordinates":
+                            f_c_in = [ak, aj, Qsk, Qsj, 
+                                      Qdotsk, Qdotsj, aGTJk, aGTJj, 
+                                      aDtk, eGTJk, 
+                                      Qdotdotsj, lambdaj, gammaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J]
+                        elif tracking_data == "imus":
+                            f_c_in = [ak, aj, Qsk, Qsj,
+                                      Qdotsk, Qdotsj, aGTJk, aGTJj, 
+                                      aDtk, eGTJk, 
+                                      Qdotdotsj, lambdaj, gammaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J, imuj]
+                    else:
+                        if tracking_data == "coordinates":
+                            f_c_in = [ak, aj, Qsk, Qsj,
+                                      Qdotsk, Qdotsj, aGTJk, aGTJj, 
+                                      aDtk, eGTJk, 
+                                      Qdotdotsj, lambdaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J]
                 else:
-                    if tracking_data == "coordinates":
-                        f_c_in = [ak, aj, normFk, normFj, Qsk, Qsj,
-                                  Qdotsk, Qdotsj, 
-                                  aDtk, 
-                                  normFDtj, Qdotdotsj, lambdaj]
-                        f_c_out = [g_eq, g_ineq1, g_ineq2, J]            
+                    if velocity_correction:
+                        if tracking_data == "coordinates":
+                            f_c_in = [ak, aj, Qsk, Qsj, Qdotsk, Qdotsj, 
+                                      aDtk, 
+                                      Qdotdotsj, lambdaj, gammaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J]
+                        elif tracking_data == "imus":
+                            f_c_in = [ak, aj, Qsk, Qsj, Qdotsk, Qdotsj, 
+                                      aDtk, 
+                                      Qdotdotsj, lambdaj, gammaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J, imuj]
+                    else:
+                        if tracking_data == "coordinates":
+                            f_c_in = [ak, aj, Qsk, Qsj, Qdotsk, Qdotsj, 
+                                      aDtk, 
+                                      Qdotdotsj, lambdaj]
+                            f_c_out = [g_eq, g_ineq1, g_ineq2, J]
+                
         elif actuation == 'torque-driven':        
             if enableGroundThorax:
                 if velocity_correction:
@@ -1830,77 +1904,150 @@ for case in cases:
         # Call map construct with opti variables and set constraints.      
         # TODO: can simplify (in and out)
         if actuation == 'muscle-driven':
-            if enableGroundThorax:
-                if velocity_correction:
-                    if tracking_data == "coordinates":
-                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                      aGTJ[:, :-1], aGTJ_c,
-                                      aDt, eGTJ,
-                                      normFDt_c, Qdotdots_c, lambda_c, gamma_c]
-                        f_c_map_out = f_c_map(*f_c_map_in) 
-                        c_g_eq = f_c_map_out[0]
-                        c_g_ineq1 = f_c_map_out[1]
-                        c_g_ineq2 = f_c_map_out[2]
-                        JPred = f_c_map_out[3] 
-                    elif tracking_data == "imus":
-                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                      aGTJ[:, :-1], aGTJ_c,
-                                      aDt, eGTJ,
-                                      normFDt_c, Qdotdots_c, lambda_c, gamma_c]
-                        f_c_map_out = f_c_map(*f_c_map_in) 
-                        c_g_eq = f_c_map_out[0]
-                        c_g_ineq1 = f_c_map_out[1]
-                        c_g_ineq2 = f_c_map_out[2]
-                        JPred = f_c_map_out[3] 
-                        imu_s_nsc = f_c_map_out[4]        
+            if muscleContractionDynamics:
+                if enableGroundThorax:
+                    if velocity_correction:
+                        if tracking_data == "coordinates":
+                            f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                          Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                          aGTJ[:, :-1], aGTJ_c,
+                                          aDt, eGTJ,
+                                          normFDt_c, Qdotdots_c, lambda_c, gamma_c]
+                            f_c_map_out = f_c_map(*f_c_map_in) 
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3] 
+                        elif tracking_data == "imus":
+                            f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                          Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                          aGTJ[:, :-1], aGTJ_c,
+                                          aDt, eGTJ,
+                                          normFDt_c, Qdotdots_c, lambda_c, gamma_c]
+                            f_c_map_out = f_c_map(*f_c_map_in) 
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3] 
+                            imu_s_nsc = f_c_map_out[4]        
+                    else:
+                        if tracking_data == "coordinates":
+                            f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                          Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
+                                          aGTJ[:, :-1], aGTJ_c,
+                                          aDt, eGTJ,
+                                          normFDt_c, Qdotdots_c, lambda_c]
+                            f_c_map_out = f_c_map(*f_c_map_in) 
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3]
                 else:
-                    if tracking_data == "coordinates":
-                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c, 
-                                      aGTJ[:, :-1], aGTJ_c,
-                                      aDt, eGTJ,
-                                      normFDt_c, Qdotdots_c, lambda_c]
-                        f_c_map_out = f_c_map(*f_c_map_in) 
-                        c_g_eq = f_c_map_out[0]
-                        c_g_ineq1 = f_c_map_out[1]
-                        c_g_ineq2 = f_c_map_out[2]
-                        JPred = f_c_map_out[3]
-            else:
-                if velocity_correction:
-                    if tracking_data == "coordinates":
-                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
-                                      aDt,
-                                      normFDt_c, Qdotdots_c, lambda_c, gamma_c]
-                        f_c_map_out = f_c_map(*f_c_map_in)
-                        c_g_eq = f_c_map_out[0]
-                        c_g_ineq1 = f_c_map_out[1]
-                        c_g_ineq2 = f_c_map_out[2]
-                        JPred = f_c_map_out[3]
-                    elif tracking_data == "imus":
-                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
-                                      aDt,
-                                      normFDt_c, Qdotdots_c, lambda_c, gamma_c]
-                        f_c_map_out = f_c_map(*f_c_map_in)
-                        c_g_eq = f_c_map_out[0]
-                        c_g_ineq1 = f_c_map_out[1]
-                        c_g_ineq2 = f_c_map_out[2]
-                        JPred = f_c_map_out[3] 
-                        imu_s_nsc = f_c_map_out[4]                   
+                    if velocity_correction:
+                        if tracking_data == "coordinates":
+                            f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                          Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
+                                          aDt,
+                                          normFDt_c, Qdotdots_c, lambda_c, gamma_c]
+                            f_c_map_out = f_c_map(*f_c_map_in)
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3]
+                        elif tracking_data == "imus":
+                            f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                          Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
+                                          aDt,
+                                          normFDt_c, Qdotdots_c, lambda_c, gamma_c]
+                            f_c_map_out = f_c_map(*f_c_map_in)
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3] 
+                            imu_s_nsc = f_c_map_out[4]                   
+                    else:
+                        if tracking_data == "coordinates":
+                            f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
+                                          Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
+                                          aDt,
+                                          normFDt_c, Qdotdots_c, lambda_c]
+                            f_c_map_out = f_c_map(*f_c_map_in)
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3] 
+            else: # no muscle contraction dynamics.
+                if enableGroundThorax:
+                    if velocity_correction:
+                        if tracking_data == "coordinates":
+                            f_c_map_in = [a[:, :-1], a_c, Qs[:, :-1], Qs_c,
+                                          Qdots[:, :-1], Qdots_c, 
+                                          aGTJ[:, :-1], aGTJ_c,
+                                          aDt, eGTJ,
+                                          Qdotdots_c, lambda_c, gamma_c]
+                            f_c_map_out = f_c_map(*f_c_map_in) 
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3] 
+                        elif tracking_data == "imus":
+                            f_c_map_in = [a[:, :-1], a_c, Qs[:, :-1], Qs_c,
+                                          Qdots[:, :-1], Qdots_c, 
+                                          aGTJ[:, :-1], aGTJ_c,
+                                          aDt, eGTJ,
+                                          Qdotdots_c, lambda_c, gamma_c]
+                            f_c_map_out = f_c_map(*f_c_map_in) 
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3] 
+                            imu_s_nsc = f_c_map_out[4]        
+                    else:
+                        if tracking_data == "coordinates":
+                            f_c_map_in = [a[:, :-1], a_c, Qs[:, :-1], Qs_c,
+                                          Qdots[:, :-1], Qdots_c, 
+                                          aGTJ[:, :-1], aGTJ_c,
+                                          aDt, eGTJ,
+                                          Qdotdots_c, lambda_c]
+                            f_c_map_out = f_c_map(*f_c_map_in) 
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3]
                 else:
-                    if tracking_data == "coordinates":
-                        f_c_map_in = [a[:, :-1], a_c, normF[:, :-1], normF_c,
-                                      Qs[:, :-1], Qs_c, Qdots[:, :-1], Qdots_c,
-                                      aDt,
-                                      normFDt_c, Qdotdots_c, lambda_c]
-                        f_c_map_out = f_c_map(*f_c_map_in)
-                        c_g_eq = f_c_map_out[0]
-                        c_g_ineq1 = f_c_map_out[1]
-                        c_g_ineq2 = f_c_map_out[2]
-                        JPred = f_c_map_out[3] 
+                    if velocity_correction:
+                        if tracking_data == "coordinates":
+                            f_c_map_in = [a[:, :-1], a_c, Qs[:, :-1], Qs_c,
+                                          Qdots[:, :-1], Qdots_c,
+                                          aDt,
+                                          Qdotdots_c, lambda_c, gamma_c]
+                            f_c_map_out = f_c_map(*f_c_map_in)
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3]
+                        elif tracking_data == "imus":
+                            f_c_map_in = [a[:, :-1], a_c, Qs[:, :-1], Qs_c,
+                                          Qdots[:, :-1], Qdots_c,
+                                          aDt,
+                                          Qdotdots_c, lambda_c, gamma_c]
+                            f_c_map_out = f_c_map(*f_c_map_in)
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3] 
+                            imu_s_nsc = f_c_map_out[4]                   
+                    else:
+                        if tracking_data == "coordinates":
+                            f_c_map_in = [a[:, :-1], a_c, Qs[:, :-1], Qs_c,
+                                          Qdots[:, :-1], Qdots_c,
+                                          aDt,
+                                          Qdotdots_c, lambda_c]
+                            f_c_map_out = f_c_map(*f_c_map_in)
+                            c_g_eq = f_c_map_out[0]
+                            c_g_ineq1 = f_c_map_out[1]
+                            c_g_ineq2 = f_c_map_out[2]
+                            JPred = f_c_map_out[3]
         elif actuation == 'torque-driven':
             if enableGroundThorax:
                 if velocity_correction:
@@ -1975,7 +2122,9 @@ for case in cases:
         for k in range(N):
             if actuation == 'muscle-driven':
                 akj2 = (ca.horzcat(a[:, k], a_c[:, k*d:(k+1)*d]))
-                normFkj2 = (ca.horzcat(normF[:, k], normF_c[:, k*d:(k+1)*d]))
+                if muscleContractionDynamics:
+                    normFkj2 = (ca.horzcat(normF[:, k],
+                                           normF_c[:, k*d:(k+1)*d]))
             elif actuation == 'torque-driven':
                 aActJkj2 = (ca.horzcat(aActJ[:, k], aActJ_c[:, k*d:(k+1)*d]))    
             Qskj2 = (ca.horzcat(Qs[:, k], Qs_c[:, k*d:(k+1)*d]))
@@ -1989,7 +2138,8 @@ for case in cases:
                 opti.subject_to(aGTJ[:, k+1] == ca.mtimes(aGTJkj2, D))                
             if actuation == 'muscle-driven':
                 opti.subject_to(a[:, k+1] == ca.mtimes(akj2, D))
-                opti.subject_to(normF[:, k+1] == ca.mtimes(normFkj2, D))  
+                if muscleContractionDynamics:
+                    opti.subject_to(normF[:, k+1] == ca.mtimes(normFkj2, D))  
             elif actuation == 'torque-driven':
                 opti.subject_to(aActJ[:, k+1] == ca.mtimes(aActJkj2, D))  
             
@@ -2175,12 +2325,13 @@ for case in cases:
             a_c_opt = (np.reshape(w_opt[starti:starti+NMuscles*(d*N)],
                                           (d*N, NMuscles))).T    
             starti = starti + NMuscles*(d*N)
-            normF_opt = (np.reshape(w_opt[starti:starti+NMuscles*(N+1)],
-                                          (N+1, NMuscles))  ).T  
-            starti = starti + NMuscles*(N+1)
-            normF_c_opt = (np.reshape(w_opt[starti:starti+NMuscles*(d*N)],
-                                              (d*N, NMuscles))).T
-            starti = starti + NMuscles*(d*N)
+            if muscleContractionDynamics:
+                normF_opt = (np.reshape(w_opt[starti:starti+NMuscles*(N+1)],
+                                              (N+1, NMuscles))  ).T  
+                starti = starti + NMuscles*(N+1)
+                normF_c_opt = (np.reshape(w_opt[starti:starti+NMuscles*(d*N)],
+                                                  (d*N, NMuscles))).T
+                starti = starti + NMuscles*(d*N)
         elif actuation == 'torque-driven':
             aActJ_opt = (np.reshape(w_opt[starti:starti+NActJoints*(N+1)],
                                           (N+1, NActJoints))).T
@@ -2221,7 +2372,7 @@ for case in cases:
             eGTJ_opt = (np.reshape(w_opt[starti:starti+NGroundThoraxJoints*N],
                                     (N, NGroundThoraxJoints))).T
             starti = starti + NGroundThoraxJoints*N
-        if actuation == 'muscle-driven':
+        if actuation == 'muscle-driven' and muscleContractionDynamics:
             normFDt_c_opt = (np.reshape(w_opt[starti:starti+NMuscles*(d*N)],
                                                 (d*N, NMuscles))).T
             starti = starti + NMuscles*(d*N)        
@@ -2261,10 +2412,11 @@ for case in cases:
             
         # %% Unscale results
         if actuation == 'muscle-driven':
-            normF_opt_nsc = normF_opt * (scalingF.to_numpy().T * np.ones((1, N+1)))
-            normF_c_opt_nsc = normF_c_opt * (scalingF.to_numpy().T * np.ones((1, d*N)))    
             aDt_opt_nsc = aDt_opt * (scalingADt.to_numpy().T * np.ones((1, N)))
-            normFDt_c_opt_nsc = normFDt_c_opt * (scalingFDt.to_numpy().T * np.ones((1, d*N)))
+            if muscleContractionDynamics:
+                normF_opt_nsc = normF_opt * (scalingF.to_numpy().T * np.ones((1, N+1)))
+                normF_c_opt_nsc = normF_c_opt * (scalingF.to_numpy().T * np.ones((1, d*N)))           
+                normFDt_c_opt_nsc = normFDt_c_opt * (scalingFDt.to_numpy().T * np.ones((1, d*N)))
         Qs_opt_nsc = Qs_opt * (scalingQs.to_numpy().T * np.ones((1, N+1)))
         Qs_c_opt_nsc = Qs_c_opt * (scalingQs.to_numpy().T * np.ones((1, d*N)))
         Qdots_opt_nsc = Qdots_opt * (scalingQdots.to_numpy().T * np.ones((1, N+1)))
@@ -2594,11 +2746,12 @@ for case in cases:
         jointAccTerm_opt_all = 0
         if actuation == 'muscle-driven':
             activationDtTerm_opt_all = 0
-            forceDtTerm_opt_all = 0
             activeFiberForce_opt_all = np.zeros((NMuscles,N*d))
             normFiberLength_opt_all = np.zeros((NMuscles,N*d))
             passiveFiberForce_opt_all = np.zeros((NMuscles,N*d))
             lMT_opt_all = np.zeros((NMuscles,N*d))
+            if muscleContractionDynamics:
+                forceDtTerm_opt_all = 0            
         lambdaTerm_opt_all = 0
         if velocity_correction:
             gammaTerm_opt_all = 0
@@ -2606,8 +2759,9 @@ for case in cases:
             # States 
             if actuation == 'muscle-driven':
                 akj_opt = (ca.horzcat(a_opt[:, k], a_c_opt[:, k*d:(k+1)*d]))
-                normFkj_opt = (ca.horzcat(normF_opt[:, k], normF_c_opt[:, k*d:(k+1)*d]))
-                normFkj_opt_nsc = normFkj_opt * (scalingF.to_numpy().T * np.ones((1, d+1)))   
+                if muscleContractionDynamics:
+                    normFkj_opt = (ca.horzcat(normF_opt[:, k], normF_c_opt[:, k*d:(k+1)*d]))
+                    normFkj_opt_nsc = normFkj_opt * (scalingF.to_numpy().T * np.ones((1, d+1)))   
             Qskj_opt = (ca.horzcat(Qs_opt[:, k], Qs_c_opt[:, k*d:(k+1)*d]))
             Qskj_opt_nsc = Qskj_opt * (scalingQs.to_numpy().T * np.ones((1, d+1)))
             Qdotskj_opt = (ca.horzcat(Qdots_opt[:, k], Qdots_c_opt[:, k*d:(k+1)*d]))
@@ -2623,7 +2777,7 @@ for case in cases:
             # Slack controls
             Qdotdotsj_opt = Qdotdots_c_opt[:, k*d:(k+1)*d]
             Qdotdotsj_opt_nsc = Qdotdotsj_opt * (scalingQdotdots.to_numpy().T * np.ones((1, d)))
-            if actuation == 'muscle-driven':
+            if actuation == 'muscle-driven' and muscleContractionDynamics:
                 normFDtj_opt = normFDt_c_opt[:, k*d:(k+1)*d] 
                 normFDtj_opt_nsc = normFDtj_opt * (scalingFDt.to_numpy().T * np.ones((1, d)))
             lambdaj_opt = lambda_c_opt[:, k*d:(k+1)*d]
@@ -2646,37 +2800,58 @@ for case in cases:
                         [lMTj_opt, vMTj_opt, dMj_opt] = F_getPolyApp(
                             Qsinj_opt, Qdotsinj_opt)                  
                     # Derive Hill-equilibrium   
-                    if enablePassiveMuscleForces:
-                        [hillEquilibriumj_opt, Fj_opt, activeFiberForcej_opt, 
-                         passiveFiberForcej_opt, normActiveFiberLengthForcej_opt, 
-                         normFiberLengthj_opt, fiberVelocityj_opt] = (
-                             f_hillEquilibrium(akj_opt[:, j+1], lMTj_opt, 
-                               vMTj_opt, normFkj_opt_nsc[:, j+1], 
-                               normFDtj_opt_nsc[:, j])) 
-                        passiveFiberForce_opt_all[:,k*d+j] = (
-                            passiveFiberForcej_opt.full().flatten())
+                    if muscleContractionDynamics:
+                        if enablePassiveMuscleForces:
+                            [hillEquilibriumj_opt, Fj_opt, activeFiberForcej_opt, 
+                             passiveFiberForcej_opt, normActiveFiberLengthForcej_opt, 
+                             normFiberLengthj_opt, fiberVelocityj_opt] = (
+                                 f_hillEquilibrium(akj_opt[:, j+1], lMTj_opt, 
+                                   vMTj_opt, normFkj_opt_nsc[:, j+1], 
+                                   normFDtj_opt_nsc[:, j])) 
+                            passiveFiberForce_opt_all[:,k*d+j] = (
+                                passiveFiberForcej_opt.full().flatten())
+                        else:
+                            [hillEquilibriumj_opt, Fj_opt, activeFiberForcej_opt, 
+                             normActiveFiberLengthForcej_opt, normFiberLengthj_opt, 
+                             fiberVelocityj_opt] = (
+                                 f_hillEquilibriumNoPassive(akj_opt[:, j+1], lMTj_opt, 
+                                   vMTj_opt, normFkj_opt_nsc[:, j+1],
+                                   normFDtj_opt_nsc[:, j]))  
+                            passiveFiberForce_opt_all[:,k*d+j] = 0
                     else:
-                        [hillEquilibriumj_opt, Fj_opt, activeFiberForcej_opt, 
-                         normActiveFiberLengthForcej_opt, normFiberLengthj_opt, 
-                         fiberVelocityj_opt] = (
-                             f_hillEquilibriumNoPassive(akj_opt[:, j+1], lMTj_opt, 
-                               vMTj_opt, normFkj_opt_nsc[:, j+1],
-                               normFDtj_opt_nsc[:, j]))  
-                        passiveFiberForce_opt_all[:,k*d+j] = 0                             
+                        if enablePassiveMuscleForces:
+                            [Fj_opt, activeFiberForcej_opt, 
+                             passiveFiberForcej_opt,
+                             normActiveFiberLengthForcej_opt, 
+                             normFiberLengthj_opt, fiberVelocityj_opt] = (
+                                 f_getMuscleForce_rigidTendon(
+                                     akj_opt[:, j+1], lMTj_opt, vMTj_opt)) 
+                            passiveFiberForce_opt_all[:,k*d+j] = (
+                                passiveFiberForcej_opt.full().flatten())
+                        else:
+                            [_, Fj_opt, normActiveFiberLengthForcej_opt,
+                             normFiberLengthj_opt, fiberVelocityj_opt] = (
+                                 f_getMuscleForce_rigidTendon(
+                                     akj_opt[:, j+1], lMTj_opt, vMTj_opt)) 
+                            passiveFiberForce_opt_all[:,k*d+j] = 0
+                            activeFiberForcej_opt = Fj_opt                        
+                        
                     lMT_opt_all[:,k*d+j] = (
                         lMTj_opt.full().flatten())  
                     activeFiberForce_opt_all[:,k*d+j] = (
                         activeFiberForcej_opt.full().flatten())         
                     normFiberLength_opt_all[:,k*d+j] = (
-                        normFiberLengthj_opt.full().flatten())                
-                    assert np.alltrue(np.abs(hillEquilibriumj_opt.full()) < 
-                                      10**(-tol)), "Hill-equilibrium"   
+                        normFiberLengthj_opt.full().flatten())        
+                    if muscleContractionDynamics:
+                        assert np.alltrue(np.abs(hillEquilibriumj_opt.full()) < 
+                                          10**(-tol)), "Hill-equilibrium"   
                 
                 # Motor control terms.
                 if actuation == 'muscle-driven':
                     actuationTerm_opt = f_NMusclesSum2(akj_opt[:, j+1])  
                     activationDtTerm_opt = f_NMusclesSum2(aDtk_opt)
-                    forceDtTerm_opt = f_NMusclesSum2(normFDtj_opt[:, j])
+                    if muscleContractionDynamics:
+                        forceDtTerm_opt = f_NMusclesSum2(normFDtj_opt[:, j])
                 elif actuation == 'torque-driven':
                     actuationTerm_opt = f_NActJointsSum2(eActJk_opt) 
                 if enableGroundThorax:
@@ -2694,7 +2869,8 @@ for case in cases:
                 jointAccTerm_opt_all += weights['jointAccTerm'] * jointAccTerm_opt * h * B[j + 1] / timeElapsed 
                 if actuation == 'muscle-driven':
                     activationDtTerm_opt_all += weights['activationDt'] * activationDtTerm_opt * h * B[j + 1] / timeElapsed 
-                    forceDtTerm_opt_all += weights['forceDt'] * forceDtTerm_opt * h * B[j + 1] / timeElapsed          
+                    if muscleContractionDynamics:
+                        forceDtTerm_opt_all += weights['forceDt'] * forceDtTerm_opt * h * B[j + 1] / timeElapsed          
                 lambdaTerm_opt_all += weights['lambdaTerm'] * lambdaTerm_opt * h * B[j + 1] / timeElapsed                 
         
         # Tracking terms
@@ -2777,8 +2953,9 @@ for case in cases:
                               jointAccTerm_opt_all.full() + 
                               lambdaTerm_opt_all.full()) 
         if actuation == 'muscle-driven':
-            JMotor_opt += (activationDtTerm_opt_all.full() +
-                           forceDtTerm_opt_all.full())           
+            JMotor_opt += (activationDtTerm_opt_all.full())   
+            if muscleContractionDynamics:
+                JMotor_opt += (forceDtTerm_opt_all.full())
                 
         # Combined term
         JAll_opt = JTrack_opt_sc + JMotor_opt
@@ -2801,9 +2978,10 @@ for case in cases:
         JTerms["jointAccTerm_sc"] = JTerms["jointAccTerm"] / JAll_opt[0][0]
         if actuation == 'muscle-driven':
             JTerms["activationDtTerm"] = activationDtTerm_opt_all.full()[0][0]
-            JTerms["forceDtTerm"] = forceDtTerm_opt_all.full()[0][0]
             JTerms["activationDtTerm_sc"] = JTerms["activationDtTerm"] / JAll_opt[0][0]
-            JTerms["forceDtTerm_sc"] = JTerms["forceDtTerm"] / JAll_opt[0][0]
+            if muscleContractionDynamics:
+                JTerms["forceDtTerm"] = forceDtTerm_opt_all.full()[0][0]            
+                JTerms["forceDtTerm_sc"] = JTerms["forceDtTerm"] / JAll_opt[0][0]
         JTerms["lambdaTerm_sc"] = JTerms["lambdaTerm"] / JAll_opt[0][0]
         if velocity_correction:
             JTerms["gammaTerm_sc"] = JTerms["gammaTerm"] / JAll_opt[0][0]
@@ -2818,7 +2996,8 @@ for case in cases:
             print("Gamma: " + str(np.round(JTerms["gammaTerm_sc"] * 100, 2)) + "%")
         if actuation == 'muscle-driven':
             print("Activations dt: " + str(np.round(JTerms["activationDtTerm_sc"] * 100, 2)) + "%")
-            print("Forces dt: " + str(np.round(JTerms["forceDtTerm_sc"] * 100, 2)) + "%")
+            if muscleContractionDynamics:
+                print("Forces dt: " + str(np.round(JTerms["forceDtTerm_sc"] * 100, 2)) + "%")
         print("Tracking: " + str(np.round(JTerms["trackingTerm_sc"] * 100, 2)) + "%")
         print("# Iterations: " + str(stats["iter_count"]))
         
@@ -2868,18 +3047,19 @@ for case in cases:
                 y = a_c_opt
                 title='Muscle activation at collocation points' 
                 plotVSBounds(y,lb,ub,title)  
-                # Muscle force at mesh points
-                lb = lBF.to_numpy().T
-                ub = uBF.to_numpy().T
-                y = normF_opt
-                title='Muscle force at mesh points' 
-                plotVSBounds(y,lb,ub,title)  
-                # Muscle force at collocation points
-                lb = lBF.to_numpy().T
-                ub = uBF.to_numpy().T
-                y = normF_c_opt
-                title='Muscle force at collocation points' 
-                plotVSBounds(y,lb,ub,title)
+                if muscleContractionDynamics:
+                    # Muscle force at mesh points
+                    lb = lBF.to_numpy().T
+                    ub = uBF.to_numpy().T
+                    y = normF_opt
+                    title='Muscle force at mesh points' 
+                    plotVSBounds(y,lb,ub,title)  
+                    # Muscle force at collocation points
+                    lb = lBF.to_numpy().T
+                    ub = uBF.to_numpy().T
+                    y = normF_c_opt
+                    title='Muscle force at collocation points' 
+                    plotVSBounds(y,lb,ub,title)
             elif actuation == 'torque-driven':
                 # Actuated joints activation at mesh points
                 lb = lBActJA.to_numpy().T
@@ -2955,7 +3135,7 @@ for case in cases:
                 plotVSBounds(y,lb,ub,title)                 
             #######################################################################
             # Slack controls
-            if actuation == 'muscle-driven':
+            if actuation == 'muscle-driven' and muscleContractionDynamics:
                 # Muscle force derivative at collocation points
                 lb = lBFDt.to_numpy().T
                 ub = uBFDt.to_numpy().T
