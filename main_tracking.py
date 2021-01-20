@@ -11,7 +11,7 @@ import copy
 
 # User settings
 # run_options = [True, True, False, False, False, False, False, False, False, False]
-run_options = [False, False, True, True, True, False, True, True, True, True]
+run_options = [False, False, True, True, True, False, True, True, False, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -24,17 +24,18 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["87"]
+cases = ["91"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = True
+visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
-visualizeLengthApproximation = False
+visualizeLengthApproximation = True
+visualizeFiberLengths = True
 
 # Numerical Settings
 tol = 4
@@ -3125,21 +3126,35 @@ for case in cases:
                             c='black', label='approximated fiber lengths')
                     ax.plot(maLengths[i,:], 
                             c='orange', label='reference fiber lengths')
-                    ax.set_ylabel('Length (-)')
+                    ax.set_ylabel('Length (m)')
                     handles, labels = ax.get_legend_handles_labels()
             plt.setp(axs[-1, :], xlabel='Time (s)')        
             plt.legend(handles, labels, loc='upper right')
             fig.align_ylabels()
             
-            from variousFunctions import getIK
-            dummyMotion_filt = (getIK(pathDummyMotion, joints)[1]).to_numpy()   
-            dummyMotion_filt_deg = copy.deepcopy(dummyMotion_filt)
-            dummyMotion_filt_deg[:,1::] = (
-                dummyMotion_filt_deg[:,1::] * 180 / np.pi)
+            # from variousFunctions import getIK
+            # dummyMotion_filt = (getIK(pathDummyMotion, joints)[1]).to_numpy()   
+            # dummyMotion_filt_deg = copy.deepcopy(dummyMotion_filt)
+            # dummyMotion_filt_deg[:,1::] = (
+            #     dummyMotion_filt_deg[:,1::] * 180 / np.pi)
             
-            labels = ['time'] + joints   
-            numpy2storage(labels, dummyMotion_filt_deg,
-                          pathDummyMotion[:-4] + "_filt.mot")
+            # labels = ['time'] + joints   
+            # numpy2storage(labels, dummyMotion_filt_deg,
+            #               pathDummyMotion[:-4] + "_filt.mot")
+            
+        if visualizeFiberLengths:
+            fig, axs = plt.subplots(6, 6, sharex=True)    
+            fig.suptitle('Normalized fiber lengths')  
+            for i, ax in enumerate(axs.flat):
+                if i < NMuscles:
+                    ax.plot(normFiberLength_opt_all[i,:], 
+                            c='black', label='fiber lengths')
+                    handles, labels = ax.get_legend_handles_labels()
+            plt.setp(axs[-1, :], xlabel='Time (s)')   
+            plt.setp(axs[:, 0], ylabel='(-)')
+            plt.legend(handles, labels, loc='upper right')
+            fig.align_ylabels()
+            fig.show()
             
 #         if visualizeSimulationResults:
 #             # Reference from full marker set
