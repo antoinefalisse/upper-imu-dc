@@ -24,7 +24,7 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["96"]
+cases = ["100", "101"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
