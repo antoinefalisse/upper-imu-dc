@@ -3271,7 +3271,7 @@ def getSettings():
                 'type_bounds': 'conservative',
                 'muscle_approximation': 'multi-dim-poly',
                 'suffix_F_poly': '_selection_0',
-                'enablePassiveMuscleForces': True,
+                'enablePassiveMuscleForces': False,
                 'muscleContractionDynamics': False,
                 
                 'w_jointAccTerm': 100,
