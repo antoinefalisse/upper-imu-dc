@@ -24,17 +24,17 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["94"]
+cases = ["98"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = True
+visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
-visualizeLengthApproximation = False
+visualizeLengthApproximation = True
 visualizeFiberLengths = True
 
 # Numerical Settings
