@@ -10,8 +10,8 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, False, False, False, False, False, False, False, False]
-# run_options = [False, False, True, True, True, False, True, True, False, True]
+# run_options = [True, True, False, False, False, False, False, False, False, False]
+run_options = [False, False, True, True, True, False, True, True, False, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -24,14 +24,14 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
-cases = ["93"]
+cases = ["94"]
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = False
+visualizeResultsAgainstBounds = True
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
 visualizeLengthApproximation = False
@@ -2829,7 +2829,8 @@ for case in cases:
                             passiveFiberForce_opt_all[:,k*d+j] = (
                                 passiveFiberForcej_opt.full().flatten())
                         else:
-                            [_, Fj_opt, normActiveFiberLengthForcej_opt,
+                            [_, Fj_opt, passiveFiberForcej_opt,
+                             normActiveFiberLengthForcej_opt,
                              normFiberLengthj_opt, fiberVelocityj_opt] = (
                                  f_getMuscleForce_rigidTendon(
                                      akj_opt[:, j+1], lMTj_opt, vMTj_opt)) 

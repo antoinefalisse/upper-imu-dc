@@ -204,7 +204,6 @@ class muscleModel_rigidTendon:
                                         self.optimalFiberLength)
         return self.muscleVolume
         
-        
     def getMuscleMass(self):                
         muscleMass = np.divide(np.multiply(self.muscleVolume, 1059.7), 
                                np.multiply(self.specificTension, 1e6))
