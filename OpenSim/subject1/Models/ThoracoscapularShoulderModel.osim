@@ -102,7 +102,8 @@
 										<representation>3</representation>
 									</SurfaceProperties>
 								</Appearance>
-								<dimensions> 0.0740668 0.169952 0.0704834</dimensions>
+								<!--The length of the radii of the ellipsoid.-->
+								<dimensions>0.074066800000000002 0.16995199999999999 0.070483400000000002</dimensions>
 							</WrapEllipsoid>
 							<WrapEllipsoid name="EllipsoidSurface">
 								<!--Whether or not the WrapObject is considered active in computing paths-->
@@ -127,7 +128,8 @@
 										<representation>3</representation>
 									</SurfaceProperties>
 								</Appearance>
-								<dimensions> 0.0994228 0.200001 0.0993853</dimensions>
+								<!--The length of the radii of the ellipsoid.-->
+								<dimensions>0.099422800000000006 0.20000100000000001 0.099385299999999996</dimensions>
 							</WrapEllipsoid>
 						</objects>
 						<groups />
@@ -321,7 +323,8 @@
 										<representation>3</representation>
 									</SurfaceProperties>
 								</Appearance>
-								<dimensions> 0.0403287 0.0906472 0.0300459</dimensions>
+								<!--The length of the radii of the ellipsoid.-->
+								<dimensions>0.040328700000000002 0.090647199999999997 0.0300459</dimensions>
 							</WrapEllipsoid>
 							<WrapCylinder name="Infra">
 								<!--Whether or not the WrapObject is considered active in computing paths-->
@@ -420,6 +423,7 @@
 										<representation>3</representation>
 									</SurfaceProperties>
 								</Appearance>
+								<!--The radius of the sphere.-->
 								<radius>0.024539745611113304</radius>
 							</WrapSphere>
 							<WrapSphere name="hheadsupraTminor">
@@ -445,6 +449,7 @@
 										<representation>3</representation>
 									</SurfaceProperties>
 								</Appearance>
+								<!--The radius of the sphere.-->
 								<radius>0.023472800149760553</radius>
 							</WrapSphere>
 							<WrapEllipsoid name="hheadInfra">
@@ -470,7 +475,8 @@
 										<representation>3</representation>
 									</SurfaceProperties>
 								</Appearance>
-								<dimensions> 0.0298252 0.0233659 0.0302255</dimensions>
+								<!--The length of the radii of the ellipsoid.-->
+								<dimensions>0.0298252 0.023365899999999998 0.030225499999999999</dimensions>
 							</WrapEllipsoid>
 						</objects>
 						<groups />
@@ -582,8 +588,7 @@
 						<scale_factors>0.20000000000000001 0.20000000000000001 0.20000000000000001</scale_factors>
 					</FrameGeometry>
 					<!--List of geometry attached to this Frame. Note, the geometry are treated as fixed to the frame and they share the transform of the frame when visualized-->
-					<attached_geometry>
-					</attached_geometry>
+					<attached_geometry />
 					<!--Set of wrap objects fixed to this body that GeometryPaths can wrap over.This property used to be a member of Body but was moved up with the introduction of Frames.-->
 					<WrapObjectSet name="wrapobjectset">
 						<objects />
@@ -667,7 +672,7 @@
 							<!--Flag indicating whether or not the values of the coordinates should be limited to the range, above.-->
 							<clamped>false</clamped>
 							<!--Flag indicating whether or not the values of the coordinates should be constrained to the current (e.g. default) value, above.-->
-							<locked>true</locked>
+							<locked>false</locked>
 							<!--If specified, the coordinate can be prescribed by a function of time. It can be any OpenSim Function with valid second order derivatives.-->
 							<prescribed_function />
 							<!--Flag indicating whether or not the values of the coordinates should be prescribed according to the function above. It is ignored if the no prescribed function is specified.-->
@@ -683,7 +688,7 @@
 							<!--Flag indicating whether or not the values of the coordinates should be limited to the range, above.-->
 							<clamped>false</clamped>
 							<!--Flag indicating whether or not the values of the coordinates should be constrained to the current (e.g. default) value, above.-->
-							<locked>true</locked>
+							<locked>false</locked>
 							<!--If specified, the coordinate can be prescribed by a function of time. It can be any OpenSim Function with valid second order derivatives.-->
 							<prescribed_function />
 							<!--Flag indicating whether or not the values of the coordinates should be prescribed according to the function above. It is ignored if the no prescribed function is specified.-->
@@ -699,7 +704,7 @@
 							<!--Flag indicating whether or not the values of the coordinates should be limited to the range, above.-->
 							<clamped>false</clamped>
 							<!--Flag indicating whether or not the values of the coordinates should be constrained to the current (e.g. default) value, above.-->
-							<locked>true</locked>
+							<locked>false</locked>
 							<!--If specified, the coordinate can be prescribed by a function of time. It can be any OpenSim Function with valid second order derivatives.-->
 							<prescribed_function />
 							<!--Flag indicating whether or not the values of the coordinates should be prescribed according to the function above. It is ignored if the no prescribed function is specified.-->
@@ -1258,7 +1263,7 @@
 							<!--Flag indicating whether or not the values of the coordinates should be limited to the range, above.-->
 							<clamped>false</clamped>
 							<!--Flag indicating whether or not the values of the coordinates should be constrained to the current (e.g. default) value, above.-->
-							<locked>true</locked>
+							<locked>false</locked>
 							<!--If specified, the coordinate can be prescribed by a function of time. It can be any OpenSim Function with valid second order derivatives.-->
 							<prescribed_function />
 							<!--Flag indicating whether or not the values of the coordinates should be prescribed according to the function above. It is ignored if the no prescribed function is specified.-->
@@ -1396,7 +1401,7 @@
 							<!--Flag indicating whether or not the values of the coordinates should be limited to the range, above.-->
 							<clamped>false</clamped>
 							<!--Flag indicating whether or not the values of the coordinates should be constrained to the current (e.g. default) value, above.-->
-							<locked>true</locked>
+							<locked>false</locked>
 							<!--If specified, the coordinate can be prescribed by a function of time. It can be any OpenSim Function with valid second order derivatives.-->
 							<prescribed_function />
 							<!--Flag indicating whether or not the values of the coordinates should be prescribed according to the function above. It is ignored if the no prescribed function is specified.-->
@@ -5163,19 +5168,19 @@
 					<fixed>false</fixed>
 				</Marker>
 				<Marker name="R.Radius">
-					<!--Body segment in the model on which the marker resides.-->
-					<body>/bodyset/radius</body>
-					<!--Location of a marker on the body segment.-->
-					<location> 0.05749 -0.22722 0.02738</location>
-					<!--Flag (true or false) specifying whether or not a marker should be kept fixed in the marker placement step.  i.e. If false, the marker is allowed to move.-->
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/radius</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>0.057489999999999999 -0.22722000000000001 0.027380000000000002</location>
+					<!--Flag (true or false) specifying whether the marker is fixed in its parent frame during the marker placement step of scaling.  If false, the marker is free to move within its parent Frame to match its experimental counterpart.-->
 					<fixed>true</fixed>
 				</Marker>
 				<Marker name="R.Ulna">
-					<!--Body segment in the model on which the marker resides.-->
-					<body>/bodyset/ulna</body>
-					<!--Location of a marker on the body segment.-->
-					<location> -0.01672 -0.24156 0.04782</location>
-					<!--Flag (true or false) specifying whether or not a marker should be kept fixed in the marker placement step.  i.e. If false, the marker is allowed to move.-->
+					<!--Path to a Component that satisfies the Socket 'parent_frame' of type PhysicalFrame (description: The frame to which this station is fixed.).-->
+					<socket_parent_frame>/bodyset/ulna</socket_parent_frame>
+					<!--The fixed location of the station expressed in its parent frame.-->
+					<location>-0.016719999999999999 -0.24156 0.047820000000000001</location>
+					<!--Flag (true or false) specifying whether the marker is fixed in its parent frame during the marker placement step of scaling.  If false, the marker is free to move within its parent Frame to match its experimental counterpart.-->
 					<fixed>true</fixed>
 				</Marker>
 			</objects>
