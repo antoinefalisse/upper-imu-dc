@@ -10,8 +10,8 @@ import numpy as np
 import copy
 
 # User settings
-run_options = [True, True, False, False, False, False, False, False, False, False]
-# run_options = [False, False, True, True, True, False, True, True, False, True]
+# run_options = [True, True, False, False, False, False, False, False, False, False]
+run_options = [False, False, True, True, True, False, True, True, False, True]
 
 solveProblem = run_options[0]
 saveResults = run_options[1]
@@ -24,18 +24,22 @@ visualizeSimulationResults = run_options[7]
 visualizeConstraintErrors = run_options[8]
 saveTrajectories = run_options[9]
 
+<<<<<<< HEAD
 cases = ["96", "97"]
+=======
+cases = ["96", "97", "98", "99", "100", "101"]
+>>>>>>> e8879fa7050b5b9245cfb83671879bb98cf84309
 
 runTrainingDataPolyApp = False
 loadMTParameters = True 
 loadPolynomialData = False
 plotPolynomials = False
 plotGuessVsBounds = False
-visualizeResultsAgainstBounds = True
+visualizeResultsAgainstBounds = False
 plotMarkerTrackingAtInitialGuess = False
 visualizeMuscleForces = False
 visualizeLengthApproximation = False
-visualizeFiberLengths = True
+visualizeFiberLengths = False
 
 # Numerical Settings
 tol = 4
@@ -3020,7 +3024,8 @@ for case in cases:
                                 'sim_coordinate_torques': torques_opt,
                                 'time': tgridf,
                                 'joints': joints,
-                                'objective': stats['iterations']['obj'][-1]}     
+                                'objective': stats['iterations']['obj'][-1],
+                                'iterations': stats["iter_count"]}     
             if tracking_data == "imus":
                 optimaltrajectories[case]['ref_imu_data'] = dataToTrack_nsc
                 optimaltrajectories[case]['sim_imu_data'] = imu_u_opt_nsc

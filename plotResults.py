@@ -3,9 +3,35 @@ import numpy as np
 import matplotlib.pyplot as plt  
 
 # %% Settings 
-# cases = ['76', '78', '84', '88'] # flexion
-cases = ['70', '79', '89'] # abduction
-# cases = ['71','80', '86', '90'] # shrugging
+# flexion
+# 76: Coordinate tracking
+# 78: torque-driven imu tracking (regular bounds - set of weights 1)
+# 81: torque-driven imu tracking (regular bounds - set of weights 1)
+# 88: torque-driven imu tracking (conservative bounds)
+# 100: muscle-driven imu tracking (conservative bounds - rigid tendon - passive force)
+# 101: muscle-driven imu tracking (conservative bounds - rigid tendon - no passive force)
+# cases = ['76', '88', '100'] 
+# cases = ['100','101']  
+
+# abduction
+# 70: Coordinate tracking
+# 79: torque-driven imu tracking (regular bounds)
+# 89: torque-driven imu tracking (conservative bounds)
+# 96: muscle-driven imu tracking (conservative bounds - rigid tendon - passive force)
+# 97: muscle-driven imu tracking (conservative bounds - rigid tendon - no passive force)
+cases = ['70', '89', '96']
+# cases = ['96', '97'] # impact of passive force
+
+
+# 71: Coordinate tracking
+# 80: torque-driven imu tracking (regular bounds - set of weights 1)
+# 83: torque-driven imu tracking (regular bounds - set of weights 2)
+# 86: muscle-driven imu tracking (physiological bounds - compliant tendon)
+# 90: torque-driven imu tracking (conservative bounds - set of weights 1)
+# 98: muscle-driven imu tracking (conservative bounds - rigid tendon - passive force)
+# 99: muscle-driven imu tracking (conservative bounds - rigid tendon - no passive force) TODO
+# cases = ['71', '90', '98'] # shrugging
+# cases = ['98', '99'] # shrugging
 mainName = "main_tracking"
 subject = "subject1"
 reference_case_IMU = cases[0]
